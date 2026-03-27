@@ -32,6 +32,7 @@ export function TiptapEditor({
   placeholder = "Schreiben Sie hier...",
 }: TiptapEditorProps) {
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Link.configure({
