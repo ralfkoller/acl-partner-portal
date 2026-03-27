@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import {
   LayoutDashboard,
   FolderOpen,
@@ -75,9 +76,13 @@ export function Sidebar({ user }: SidebarProps) {
 
         {/* Logo */}
         <div className="px-5 py-6 flex items-center gap-3">
-          <div className="w-9 h-9 bg-acl-orange rounded-xl flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-sm font-bold">A</span>
-          </div>
+          <Image
+            src="/acl-logo.png"
+            alt="ACL Logo"
+            width={36}
+            height={36}
+            className="flex-shrink-0"
+          />
           <div>
             <div className="text-white font-bold text-sm">ACL Portal</div>
             <div className="text-acl-gray text-[10px]">Partner Dashboard</div>

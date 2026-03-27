@@ -17,6 +17,10 @@ export const metadata: Metadata = {
     template: "%s | ACL Partner Portal",
   },
   description: "Das Partner Portal der ACL advanced commerce labs GmbH",
+  icons: {
+    icon: "/acl-logo.png",
+    apple: "/acl-logo.png",
+  },
 }
 
 export default function RootLayout({

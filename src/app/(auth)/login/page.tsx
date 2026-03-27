@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import Image from "next/image"
 import { Eye, EyeOff, Lock, Mail, ArrowLeft } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -52,10 +53,15 @@ export default function LoginPage() {
         </svg>
 
         <div className="relative z-10 text-center">
-          {/* ACL Logo Badge */}
-          <div className="w-20 h-20 bg-acl-orange rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
-            <span className="text-white text-3xl font-bold">A</span>
-          </div>
+          {/* ACL Logo */}
+          <Image
+            src="/acl-logo.png"
+            alt="ACL Logo"
+            width={80}
+            height={80}
+            className="mx-auto mb-8"
+            priority
+          />
           <h1 className="text-4xl font-bold text-white mb-4">Partner Portal</h1>
           <p className="text-white/50 text-lg max-w-md">
             Ihr Zugang zu exklusiven Ressourcen, aktuellen Neuigkeiten und gemeinsamen Projekten.
@@ -73,9 +79,12 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 bg-acl-orange rounded-xl flex items-center justify-center">
-              <span className="text-white text-lg font-bold">A</span>
-            </div>
+            <Image
+              src="/acl-logo.png"
+              alt="ACL Logo"
+              width={40}
+              height={40}
+            />
             <span className="text-lg font-bold text-acl-dark">ACL Partner Portal</span>
           </div>
 

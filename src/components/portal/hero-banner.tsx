@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 interface HeroBannerProps {
   userName: string
 }
@@ -20,10 +22,14 @@ export function HeroBanner({ userName }: HeroBannerProps) {
 
       <div className="relative px-8 py-10 flex items-center justify-between">
         <div>
-          {/* ACL Logo Badge */}
-          <div className="w-10 h-10 bg-acl-orange rounded-xl flex items-center justify-center mb-4">
-            <span className="text-white text-lg font-bold">A</span>
-          </div>
+          {/* ACL Logo */}
+          <Image
+            src="/acl-logo.png"
+            alt="ACL Logo"
+            width={40}
+            height={40}
+            className="mb-4"
+          />
           <h1 className="text-2xl font-bold text-white mb-2">
             Willkommen zurück, {userName.split(" ")[0]}!
           </h1>
