@@ -47,15 +47,24 @@ export async function resetPassword(formData: FormData) {
 
 export async function getUser() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  
+  if (authError) {
+    console.error("[getUser] Auth error:", authError.message)
+    return null
+  }
   
   if (!user) return null
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
     .single()
+
+  if (profileError) {
+    console.error("[getUser] Profile query error:", profileError.message, profileError.code, profileError.details, profileError.hint)
+  }
 
   return profile
 }

@@ -11,15 +11,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Helper for RLS
-CREATE OR REPLACE FUNCTION is_admin()
-RETURNS BOOLEAN AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM profiles
-    WHERE id = auth.uid() AND role = 'admin'
-  );
-$$ LANGUAGE sql SECURITY DEFINER;
-
 -- --------------------------------------------------------
 -- 1. profiles
 -- --------------------------------------------------------
@@ -37,6 +28,15 @@ CREATE TABLE profiles (
 CREATE TRIGGER profiles_updated_at
   BEFORE UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- Helper for RLS (must come after profiles table)
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+$$ LANGUAGE sql SECURITY DEFINER;
 
 -- --------------------------------------------------------
 -- 2. news
