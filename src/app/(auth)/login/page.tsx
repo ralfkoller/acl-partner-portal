@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Eye, EyeOff, Lock, Mail, ArrowLeft } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -9,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { login, resetPassword } from "@/lib/actions/auth"
 
 export default function LoginPage() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [isResetMode, setIsResetMode] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -21,6 +23,8 @@ export default function LoginPage() {
       const result = await login(formData)
       if (result?.error) {
         setError(result.error)
+      } else if (result?.redirect) {
+        router.push(result.redirect)
       }
     })
   }

@@ -19,7 +19,7 @@ export async function login(formData: FormData) {
   }
 
   revalidatePath("/", "layout")
-  redirect("/dashboard")
+  return { redirect: "/dashboard" }
 }
 
 export async function logout() {
@@ -35,7 +35,7 @@ export async function resetPassword(formData: FormData) {
   const email = formData.get("email") as string
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/callback?next=/profil`,
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/auth/callback?next=/profil`,
   })
 
   if (error) {
