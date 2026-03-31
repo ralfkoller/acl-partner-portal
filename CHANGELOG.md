@@ -8,12 +8,13 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- **Benutzer erstellen in der Admin-Benutzerverwaltung:** Neuer Dialog unter `/admin/benutzer` mit zwei Tabs — "Erstellen" (sofortiges Anlegen mit Passwort via Supabase Admin API) und "Einladen" (Email-Einladung via Supabase). Neuer Supabase Admin-Client (`src/lib/supabase/admin.ts`) mit Service Role Key. Neue Server Actions `createUser()` und `inviteUser()` (`src/lib/actions/users.ts`).
+- Umgebungsvariable `NEXT_PUBLIC_APP_URL` in `.env.local` ergänzt.
+
 ### Fixed
 - **Login hängt im Rendering:** `redirect()` in der `login` Server Action wurde innerhalb von `useTransition` aufgerufen, was dazu führte, dass der `NEXT_REDIRECT`-Error von React abgefangen wurde und die Transition nie abschloss. Die Action gibt nun `{ redirect: "/dashboard" }` zurück; der Client führt den Redirect via `router.push()` aus.
 - **Passwort-Reset-Link zeigt auf falsche URL:** `redirectTo` in `resetPasswordForEmail` verwendete `NEXT_PUBLIC_SUPABASE_URL` (Supabase-API-URL) statt der App-URL. Korrigiert auf `NEXT_PUBLIC_APP_URL` mit Fallback auf `http://localhost:3000`.
-
-### Added
-- Umgebungsvariable `NEXT_PUBLIC_APP_URL` in `.env.local` ergänzt.
 
 ---
 

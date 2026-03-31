@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { UserPlus, Shield, User, Search } from "lucide-react"
-import { updateUserRole } from "@/lib/actions/users"
+import { UserPlus, Shield, User, Search, Eye, EyeOff } from "lucide-react"
+import { updateUserRole, createUser, inviteUser } from "@/lib/actions/users"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -19,19 +19,25 @@ interface UserProfile {
   created_at: string
 }
 
+const INPUT_CLASS = "rounded-xl bg-acl-light/50 border-gray-200 focus:border-acl-orange focus:ring-2 focus:ring-acl-orange/20"
+const SUBMIT_CLASS = "w-full py-3 px-6 bg-acl-orange hover:bg-acl-orange-hover text-white font-medium rounded-xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+
 export function AdminUsersList({ users }: { users: UserProfile[] }) {
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
-  const [showInvite, setShowInvite] = useState(false)
+  const [showDialog, setShowDialog] = useState(false)
+  const [activeTab, setActiveTab] = useState<"create" | "invite">("create")
   const [roleChange, setRoleChange] = useState<{ id: string; name: string; newRole: "admin" | "partner" } | null>(null)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
-  // Invite form
-  const [invEmail, setInvEmail] = useState("")
-  const [invName, setInvName] = useState("")
-  const [invCompany, setInvCompany] = useState("")
-  const [invRole, setInvRole] = useState<"admin" | "partner">("partner")
+  // Shared form fields
+  const [formEmail, setFormEmail] = useState("")
+  const [formName, setFormName] = useState("")
+  const [formCompany, setFormCompany] = useState("")
+  const [formRole, setFormRole] = useState<"admin" | "partner">("partner")
+  const [formPassword, setFormPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
@@ -40,6 +46,21 @@ export function AdminUsersList({ users }: { users: UserProfile[] }) {
     const matchesRole = roleFilter === "all" || u.role === roleFilter
     return matchesSearch && matchesRole
   })
+
+  function resetForm() {
+    setFormEmail("")
+    setFormName("")
+    setFormCompany("")
+    setFormRole("partner")
+    setFormPassword("")
+    setShowPassword(false)
+  }
+
+  function handleOpenDialog(tab: "create" | "invite") {
+    resetForm()
+    setActiveTab(tab)
+    setShowDialog(true)
+  }
 
   function handleRoleChange() {
     if (!roleChange) return
@@ -54,12 +75,27 @@ export function AdminUsersList({ users }: { users: UserProfile[] }) {
     })
   }
 
-  function handleInvite(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    // Note: supabase.auth.admin.inviteUserByEmail requires service role key
-    // This would typically be done via an API route with the service role
-    toast.info("Einladungsfunktion erfordert Supabase Service Role Key. Bitte konfigurieren Sie eine API-Route.")
-    setShowInvite(false)
+    const formData = new FormData(e.currentTarget)
+    startTransition(async () => {
+      const result = activeTab === "create"
+        ? await createUser(formData)
+        : await inviteUser(formData)
+
+      if (result.error) {
+        toast.error(result.error)
+      } else {
+        toast.success(
+          activeTab === "create"
+            ? "Benutzer wurde erstellt."
+            : "Einladung wurde gesendet."
+        )
+        setShowDialog(false)
+        resetForm()
+        router.refresh()
+      }
+    })
   }
 
   return (
@@ -86,12 +122,21 @@ export function AdminUsersList({ users }: { users: UserProfile[] }) {
             </SelectContent>
           </Select>
         </div>
-        <button
-          onClick={() => setShowInvite(true)}
-          className="flex items-center gap-2 py-2.5 px-5 bg-acl-orange hover:bg-acl-orange-hover text-white text-sm font-medium rounded-xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all"
-        >
-          <UserPlus className="w-4 h-4" /> Partner einladen
-        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleOpenDialog("invite")}
+            className="flex items-center gap-2 py-2.5 px-5 bg-white hover:bg-acl-light border border-gray-200 text-acl-dark text-sm font-medium rounded-xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all"
+          >
+            <UserPlus className="w-4 h-4" /> Partner einladen
+          </button>
+          <button
+            onClick={() => handleOpenDialog("create")}
+            className="flex items-center gap-2 py-2.5 px-5 bg-acl-orange hover:bg-acl-orange-hover text-white text-sm font-medium rounded-xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all"
+          >
+            <UserPlus className="w-4 h-4" /> Benutzer erstellen
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100/80 overflow-hidden">
@@ -159,26 +204,118 @@ export function AdminUsersList({ users }: { users: UserProfile[] }) {
         </table>
       </div>
 
-      {/* Invite Dialog */}
-      <Dialog open={showInvite} onOpenChange={setShowInvite}>
-        <DialogContent className="rounded-xl">
-          <DialogHeader><DialogTitle className="text-acl-dark">Partner einladen</DialogTitle></DialogHeader>
-          <form onSubmit={handleInvite} className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-acl-dark">E-Mail</Label>
-              <Input value={invEmail} onChange={(e) => setInvEmail(e.target.value)} type="email" required className="rounded-xl bg-acl-light/50 border-gray-200 focus:border-acl-orange focus:ring-2 focus:ring-acl-orange/20" />
-            </div>
+      {/* Create / Invite Dialog */}
+      <Dialog open={showDialog} onOpenChange={(open) => { if (!open) { setShowDialog(false); resetForm() } }}>
+        <DialogContent className="rounded-xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-acl-dark">Benutzer hinzufügen</DialogTitle>
+          </DialogHeader>
+
+          {/* Tabs */}
+          <div className="flex rounded-xl bg-acl-light p-1 mb-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("create")}
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+                activeTab === "create"
+                  ? "bg-white text-acl-dark shadow-sm"
+                  : "text-acl-gray hover:text-acl-dark"
+              }`}
+            >
+              Erstellen
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("invite")}
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+                activeTab === "invite"
+                  ? "bg-white text-acl-dark shadow-sm"
+                  : "text-acl-gray hover:text-acl-dark"
+              }`}
+            >
+              Einladen
+            </button>
+          </div>
+
+          {activeTab === "create" && (
+            <p className="text-xs text-acl-gray -mt-1 mb-1">
+              Benutzer wird sofort angelegt. Der Admin vergibt das initiale Passwort.
+            </p>
+          )}
+          {activeTab === "invite" && (
+            <p className="text-xs text-acl-gray -mt-1 mb-1">
+              Supabase sendet eine Einladungs-Email. Der Benutzer setzt sein Passwort selbst.
+            </p>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* hidden role field for FormData */}
+            <input type="hidden" name="role" value={formRole} />
+
             <div className="space-y-2">
               <Label className="text-sm font-medium text-acl-dark">Name</Label>
-              <Input value={invName} onChange={(e) => setInvName(e.target.value)} required className="rounded-xl bg-acl-light/50 border-gray-200 focus:border-acl-orange focus:ring-2 focus:ring-acl-orange/20" />
+              <Input
+                name="full_name"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder="Max Mustermann"
+                required
+                className={INPUT_CLASS}
+              />
             </div>
+
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-acl-dark">Unternehmen</Label>
-              <Input value={invCompany} onChange={(e) => setInvCompany(e.target.value)} className="rounded-xl bg-acl-light/50 border-gray-200 focus:border-acl-orange focus:ring-2 focus:ring-acl-orange/20" />
+              <Label className="text-sm font-medium text-acl-dark">E-Mail</Label>
+              <Input
+                name="email"
+                value={formEmail}
+                onChange={(e) => setFormEmail(e.target.value)}
+                type="email"
+                placeholder="max@unternehmen.at"
+                required
+                className={INPUT_CLASS}
+              />
             </div>
+
+            {activeTab === "create" && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-acl-dark">Passwort</Label>
+                <div className="relative">
+                  <Input
+                    name="password"
+                    value={formPassword}
+                    onChange={(e) => setFormPassword(e.target.value)}
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Mindestens 8 Zeichen"
+                    minLength={8}
+                    required
+                    className={`pr-11 ${INPUT_CLASS}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-acl-gray hover:text-acl-dark transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-acl-dark">Unternehmen <span className="text-acl-gray font-normal">(optional)</span></Label>
+              <Input
+                name="company"
+                value={formCompany}
+                onChange={(e) => setFormCompany(e.target.value)}
+                placeholder="Unternehmen GmbH"
+                className={INPUT_CLASS}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label className="text-sm font-medium text-acl-dark">Rolle</Label>
-              <Select value={invRole} onValueChange={(v) => setInvRole(v as any)}>
+              <Select value={formRole} onValueChange={(v) => setFormRole(v as "admin" | "partner")}>
                 <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="partner">Partner</SelectItem>
@@ -186,8 +323,12 @@ export function AdminUsersList({ users }: { users: UserProfile[] }) {
                 </SelectContent>
               </Select>
             </div>
-            <button type="submit" disabled={isPending} className="w-full py-3 px-6 bg-acl-orange hover:bg-acl-orange-hover text-white font-medium rounded-xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all disabled:opacity-50">
-              {isPending ? "Wird eingeladen..." : "Einladung senden"}
+
+            <button type="submit" disabled={isPending} className={SUBMIT_CLASS}>
+              {isPending
+                ? activeTab === "create" ? "Wird erstellt..." : "Wird eingeladen..."
+                : activeTab === "create" ? "Benutzer erstellen" : "Einladung senden"
+              }
             </button>
           </form>
         </DialogContent>
