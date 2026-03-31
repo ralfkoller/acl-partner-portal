@@ -36,31 +36,22 @@ export async function createUser(formData: FormData) {
 
   const adminClient = createAdminClient()
 
-  // Auth-User anlegen mit sofort aktivem Passwort
+  // Auth-User anlegen — user_metadata wird vom Trigger `on_auth_user_created`
+  // automatisch in public.profiles übernommen (full_name, company, role).
+  // Kein manueller profiles-INSERT nötig.
   const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
     email,
     password,
     email_confirm: true, // sofort aktiv, keine Bestätigungs-Email
+    user_metadata: {
+      full_name: fullName,
+      company: company || null,
+      role,
+    },
   })
 
   if (authError) return { error: authError.message }
   if (!authData.user) return { error: "Benutzer konnte nicht erstellt werden." }
-
-  // Profil anlegen
-  const { error: profileError } = await adminClient
-    .from("profiles")
-    .insert({
-      id: authData.user.id,
-      full_name: fullName,
-      company: company || null,
-      role,
-    })
-
-  if (profileError) {
-    // Auth-User wieder löschen wenn Profil-Insert fehlschlägt
-    await adminClient.auth.admin.deleteUser(authData.user.id)
-    return { error: profileError.message }
-  }
 
   revalidatePath("/admin/benutzer")
   return { success: true }
@@ -74,29 +65,19 @@ export async function inviteUser(formData: FormData) {
 
   const adminClient = createAdminClient()
 
-  // Einladungs-Email via Supabase senden
+  // Einladungs-Email via Supabase senden.
+  // `data` landet in raw_user_meta_data und wird vom Trigger `on_auth_user_created`
+  // beim ersten Akzeptieren der Einladung automatisch in public.profiles übernommen.
   const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
     email,
     {
       redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/login`,
-      data: { full_name: fullName, company, role },
+      data: { full_name: fullName, company: company || null, role },
     }
   )
 
   if (inviteError) return { error: inviteError.message }
   if (!inviteData.user) return { error: "Einladung konnte nicht gesendet werden." }
-
-  // Profil voranlegen (wird bei erstem Login durch Trigger befüllt/überschrieben)
-  const { error: profileError } = await adminClient
-    .from("profiles")
-    .upsert({
-      id: inviteData.user.id,
-      full_name: fullName,
-      company: company || null,
-      role,
-    })
-
-  if (profileError) return { error: profileError.message }
 
   revalidatePath("/admin/benutzer")
   return { success: true }
