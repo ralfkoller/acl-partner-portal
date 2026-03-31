@@ -9,6 +9,13 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- **Testing-Infrastruktur:** Vitest 4 + Testing Library für Unit-Tests; Playwright für E2E-Tests.
+  - `vitest.config.ts` + `vitest.setup.ts` — jsdom-Environment, `@testing-library/jest-dom` global
+  - `playwright.config.ts` — webServer (Dev-Server), storageState-basierte Auth-Session, getrennte Projekte für Login- und Admin-Tests
+  - Unit-Tests: `src/lib/schemas/auth.test.ts` (20 Tests), `src/lib/schemas/news.test.ts` (9 Tests), `src/components/admin/admin-users-list.test.tsx` (15 Tests) — 39/39 grün
+  - E2E-Tests: `e2e/login.spec.ts` (5 Tests), `e2e/admin-users.spec.ts` (11 Tests) — 16/16 grün
+  - `.env.test.local.example` als Vorlage für E2E-Credentials
+  - Scripts: `pnpm test`, `pnpm test:watch`, `pnpm test:e2e`, `pnpm test:e2e:ui`
 - **Benutzer erstellen in der Admin-Benutzerverwaltung:** Neuer Dialog unter `/admin/benutzer` mit zwei Tabs — "Erstellen" (sofortiges Anlegen mit Passwort via Supabase Admin API) und "Einladen" (Email-Einladung via Supabase). Neuer Supabase Admin-Client (`src/lib/supabase/admin.ts`) mit Service Role Key. Neue Server Actions `createUser()` und `inviteUser()` (`src/lib/actions/users.ts`).
 - Umgebungsvariable `NEXT_PUBLIC_APP_URL` in `.env.local` ergänzt.
 
