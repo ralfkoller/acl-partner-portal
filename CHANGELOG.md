@@ -8,6 +8,32 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed — Bug-Fixes & E2E-Tests (2026-04-20)
+
+#### Bug 1: Event "Anmelden" Button reagierte nicht
+- **Root Cause:** `.v2-border-animate::before` Pseudo-Element (`position: absolute; inset: 0`) überdeckte den Card-Bereich und blockierte alle Pointer-Events auf Buttons
+- **Fix:** `pointer-events: none` auf `.v2-border-animate::before` in `globals.css`
+
+#### Bug 2: Dateiupload — Kategorie konnte nicht gewählt werden
+- **Root Cause:** `useState("")` für Base UI Select — `value=""` wird als "keine Auswahl" behandelt
+- **Fix:** `useState<string | undefined>(undefined)` + `__none__` Sentinel-Value + Reset auf `undefined`
+
+#### Bug 3: News "Weiterlesen" funktionierte nicht
+- **Root Cause:** `id` nicht destructuriert, `<span>` statt `<Link>`, fehlende `/news/[id]` Route
+- **Fix:** `id` destructuriert, `<Link href="/news/${id}">` + Route `/app/(portal)/news/[id]/page.tsx` erstellt
+- **Fix:** `TiptapRenderer` — `"use client"` hinzugefügt + `dark` prop für Dark-Theme
+
+### Added — Playwright E2E-Tests
+- **`e2e/admin-dateien.spec.ts`** — Upload, Kategorie-Zuweisung, Datei-Liste
+- **`e2e/portal-kalender.spec.ts`** — Kalender laden, Monats-Navigation, Anmelden/Abmelden
+- **`e2e/portal-news.spec.ts`** — Weiterlesen-Link, News-Detailseite, Zurück-Navigation
+- **`e2e/admin-users.spec.ts`** — An aktuelle UI angepasst
+- **`playwright.config.ts`** — dotenv-Loading + `portal`-Projekt für auth-gesicherte Tests
+- **`.env.test.local`** — E2E-Credentials
+
+### Changed
+- **`dotenv`** als devDependency hinzugefügt (TypeScript-Types für playwright.config.ts)
+
 ### Changed — v2 Dark-Theme Migration (komplett)
 - **Gesamtes Frontend** von hellem Enterprise-Design auf Dark-Theme (Supabase-Stil) migriert
 - **Portal-Bereich:** Alle Pages (dashboard, kalender, dateien, wiki, profil) verwenden v2-Komponenten

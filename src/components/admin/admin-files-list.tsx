@@ -30,7 +30,7 @@ export function AdminFilesList({
   const [file, setFile] = useState<globalThis.File | null>(null)
   const [fileName, setFileName] = useState("")
   const [fileDesc, setFileDesc] = useState("")
-  const [fileCat, setFileCat] = useState("")
+  const [fileCat, setFileCat] = useState<string | undefined>(undefined)
 
   // Category state
   const [catName, setCatName] = useState("")
@@ -69,7 +69,7 @@ export function AdminFilesList({
       const result = await createFileRecord({
         name: fileName || file.name,
         description: fileDesc,
-        category_id: fileCat || undefined,
+        category_id: fileCat === "__none__" || !fileCat ? undefined : fileCat,
         storage_path: path,
         file_size: size,
         mime_type: mimeType,
@@ -83,7 +83,7 @@ export function AdminFilesList({
         setFile(null)
         setFileName("")
         setFileDesc("")
-        setFileCat("")
+        setFileCat(undefined)
         router.refresh()
       }
     })
@@ -216,11 +216,12 @@ export function AdminFilesList({
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-medium text-acl-dark">Kategorie</Label>
-              <Select value={fileCat} onValueChange={(v) => setFileCat(v ?? "")}>
+              <Select value={fileCat} onValueChange={(v) => setFileCat(v ?? undefined)}>
                 <SelectTrigger className="rounded-xl">
                   <SelectValue placeholder="Kategorie wählen..." />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__none__">Keine Kategorie</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}

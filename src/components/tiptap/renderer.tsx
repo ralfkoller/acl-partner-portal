@@ -1,3 +1,5 @@
+"use client"
+
 import { generateHTML } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Link from "@tiptap/extension-link"
@@ -5,9 +7,10 @@ import Image from "@tiptap/extension-image"
 
 interface TiptapRendererProps {
   content: any
+  dark?: boolean
 }
 
-export function TiptapRenderer({ content }: TiptapRendererProps) {
+export function TiptapRenderer({ content, dark = false }: TiptapRendererProps) {
   if (!content) return null
 
   try {
@@ -23,11 +26,13 @@ export function TiptapRenderer({ content }: TiptapRendererProps) {
 
     return (
       <div
-        className="prose prose-sm max-w-none text-acl-dark"
+        className={dark
+          ? "prose prose-invert prose-sm max-w-none"
+          : "prose prose-sm max-w-none text-acl-dark"}
         dangerouslySetInnerHTML={{ __html: html }}
       />
     )
   } catch {
-    return <p className="text-sm text-acl-gray">Inhalt kann nicht angezeigt werden.</p>
+    return <p className="text-sm text-white/50">Inhalt kann nicht angezeigt werden.</p>
   }
 }

@@ -119,7 +119,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="w-full py-3.5 px-6 bg-gradient-to-r from-acl-orange to-acl-orange-hover text-white font-semibold rounded-xl v2-glow-sm hover:v2-glow-md active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-base"
+              className="w-full py-3.5 px-6 bg-gradient-to-r from-acl-orange to-acl-orange-hover text-white font-semibold rounded-xl v2-glow-sm hover:shadow-[0_0_25px_rgba(240,168,68,0.5)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group text-base"
             >
               {isPending ? (
                 "Anmeldung..."

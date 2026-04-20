@@ -1,12 +1,7 @@
-"use client"
-
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
 import { MapPin, Clock, Users } from "lucide-react"
-import { useTransition } from "react"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import { registerForEvent, unregisterFromEvent } from "@/lib/actions/registrations"
+import { EventRegisterButton } from "./event-register-button"
 
 interface EventCardV2Props {
   id: string
@@ -29,34 +24,8 @@ export function EventCardV2({
   registrationCount,
   isRegistered,
 }: EventCardV2Props) {
-  const [isPending, startTransition] = useTransition()
-  const router = useRouter()
   const isFull = maxSeats !== null && registrationCount >= maxSeats
   const date = new Date(startDate)
-
-  async function handleRegister() {
-    startTransition(async () => {
-      const result = await registerForEvent(id)
-      if (result.error) {
-        toast.error(result.error)
-      } else {
-        toast.success("Erfolgreich angemeldet")
-        router.refresh()
-      }
-    })
-  }
-
-  async function handleUnregister() {
-    startTransition(async () => {
-      const result = await unregisterFromEvent(id)
-      if (result.error) {
-        toast.error(result.error)
-      } else {
-        toast.success("Erfolgreich abgemeldet")
-        router.refresh()
-      }
-    })
-  }
 
   return (
     <div className="v2-glass v2-border-animate p-6">
@@ -90,27 +59,11 @@ export function EventCardV2({
             </span>
           </div>
 
-          {isRegistered ? (
-            <button
-              onClick={handleUnregister}
-              disabled={isPending}
-              className="px-4 py-1.5 rounded-xl text-xs font-medium bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-all disabled:opacity-50"
-            >
-              {isPending ? "..." : "Angemeldet — Abmelden?"}
-            </button>
-          ) : isFull ? (
-            <span className="px-4 py-1.5 rounded-xl text-xs font-medium bg-red-500/10 text-red-400">
-              Ausgebucht
-            </span>
-          ) : (
-            <button
-              onClick={handleRegister}
-              disabled={isPending}
-              className="px-4 py-1.5 rounded-xl text-xs font-medium bg-acl-orange/10 text-acl-orange hover:bg-acl-orange hover:text-white transition-all disabled:opacity-50"
-            >
-              {isPending ? "..." : "Anmelden"}
-            </button>
-          )}
+          <EventRegisterButton
+            eventId={id}
+            isRegistered={isRegistered}
+            isFull={isFull}
+          />
         </div>
       </div>
     </div>

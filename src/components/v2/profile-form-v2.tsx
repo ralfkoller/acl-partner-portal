@@ -71,7 +71,7 @@ export function ProfileFormV2({ user }: ProfileFormV2Props) {
       <button
         type="submit"
         disabled={isPending}
-        className="py-3 px-6 bg-gradient-to-r from-acl-orange to-acl-orange-hover text-white font-medium rounded-xl v2-glow-sm hover:v2-glow-md active:scale-[0.98] transition-all disabled:opacity-50"
+        className="py-3 px-6 bg-gradient-to-r from-acl-orange to-acl-orange-hover text-white font-medium rounded-xl v2-glow-sm hover:shadow-[0_0_25px_rgba(240,168,68,0.5)] active:scale-[0.98] transition-all disabled:opacity-50"
       >
         {isPending ? "Speichern..." : "Änderungen speichern"}
       </button>

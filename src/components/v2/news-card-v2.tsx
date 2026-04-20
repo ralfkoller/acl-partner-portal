@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
 
@@ -8,7 +9,7 @@ interface NewsCardV2Props {
   publishedAt: string | null
 }
 
-export function NewsCardV2({ title, excerpt, publishedAt }: NewsCardV2Props) {
+export function NewsCardV2({ id, title, excerpt, publishedAt }: NewsCardV2Props) {
   return (
     <div className="v2-glass v2-border-animate p-6 group">
       <div className="flex items-center gap-3 mb-3">
@@ -27,9 +28,12 @@ export function NewsCardV2({ title, excerpt, publishedAt }: NewsCardV2Props) {
       {excerpt && (
         <p className="text-sm text-white/50 line-clamp-2 mb-3">{excerpt}</p>
       )}
-      <span className="text-sm text-acl-orange font-medium cursor-pointer">
+      <Link
+        href={`/news/${id}`}
+        className="text-sm text-acl-orange font-medium hover:underline"
+      >
         Weiterlesen →
-      </span>
+      </Link>
     </div>
   )
 }

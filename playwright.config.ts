@@ -1,4 +1,9 @@
 import { defineConfig, devices } from "@playwright/test"
+import { config } from "dotenv"
+import { resolve } from "path"
+
+// .env.test.local für E2E-Credentials laden
+config({ path: resolve(__dirname, ".env.test.local") })
 
 export default defineConfig({
   testDir: "./e2e",
@@ -27,6 +32,16 @@ export default defineConfig({
       },
       dependencies: ["setup"],
       testMatch: /.*admin.*\.spec\.ts/,
+    },
+    // Portal-Tests (eingeloggte User-Session)
+    {
+      name: "portal",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "e2e/.auth/user.json",
+      },
+      dependencies: ["setup"],
+      testMatch: /.*portal.*\.spec\.ts/,
     },
     // Login-Tests ohne Auth-State (testen den Login selbst)
     {
