@@ -28,8 +28,8 @@ export default async function AdminNewsPage() {
     <>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-acl-dark">News verwalten</h1>
-          <p className="text-sm text-acl-gray mt-1">
+          <h1 className="text-2xl font-bold text-white">News verwalten</h1>
+          <p className="text-sm text-white/60 mt-1">
             Erstellen und verwalten Sie Neuigkeiten für Ihre Partner.
           </p>
         </div>

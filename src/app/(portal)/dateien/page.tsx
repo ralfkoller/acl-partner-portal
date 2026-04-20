@@ -1,8 +1,8 @@
 import { db } from "@/lib/db"
 import { files, fileCategories } from "@/lib/db/schema"
 import { eq, asc, desc, like } from "drizzle-orm"
-import { FileCard } from "@/components/portal/file-card"
-import { DateienFilter } from "@/components/portal/dateien-filter"
+import { FileCardV2 } from "@/components/v2/file-card-v2"
+import { DateienFilterV2 } from "@/components/v2/dateien-filter-v2"
 import { FolderOpen } from "lucide-react"
 
 export const metadata = {
@@ -50,19 +50,19 @@ export default async function DateienPage({
     <>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-acl-dark">Dateien</h1>
-          <p className="text-sm text-acl-gray mt-1">
+          <h1 className="text-2xl font-bold text-white">Dateien</h1>
+          <p className="text-sm text-white/60 mt-1">
             Laden Sie Dokumente, Präsentationen und Assets herunter.
           </p>
         </div>
       </div>
 
-      <DateienFilter categories={allCategories} />
+      <DateienFilterV2 categories={allCategories} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {allFiles.length > 0 ? (
           allFiles.map((file) => (
-            <FileCard
+            <FileCardV2
               key={file.id}
               id={file.id}
               name={file.name}
@@ -74,9 +74,9 @@ export default async function DateienPage({
             />
           ))
         ) : (
-          <div className="col-span-full bg-white rounded-xl p-8 border border-gray-100/80 text-center">
-            <FolderOpen className="w-10 h-10 text-acl-gray/40 mx-auto mb-3" />
-            <p className="text-acl-gray text-sm">Keine Dateien gefunden.</p>
+          <div className="col-span-full v2-glass p-8 text-center">
+            <FolderOpen className="w-10 h-10 text-white/20 mx-auto mb-3" />
+            <p className="text-white/60 text-sm">Keine Dateien gefunden.</p>
           </div>
         )}
       </div>

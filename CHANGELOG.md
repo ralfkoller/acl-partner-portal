@@ -8,6 +8,17 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unreleased]
 
+### Changed — v2 Dark-Theme Migration (komplett)
+- **Gesamtes Frontend** von hellem Enterprise-Design auf Dark-Theme (Supabase-Stil) migriert
+- **Portal-Bereich:** Alle Pages (dashboard, kalender, dateien, wiki, profil) verwenden v2-Komponenten
+- **Admin-Bereich:** Layout mit Dark-BG + Pattern-Backdrop, alle Pages + Komponenten auf Dark-Theme
+- **Loading-Screens:** Alle 7 Skeleton-Loader auf Dark-Glassmorphism (`bg-white/[0.07]`)
+- **Error-Pages:** Portal + Admin Error-Seiten auf Dark-Theme
+- **Admin-Komponenten:** news-list, files-list, events-list, users-list, wiki-manager, news-editor — alle Tabellen/Cards auf `v2-glass` Stil
+- **proxy.ts:** `/v2/`-Routing entfernt, nur noch Standard-Pfade
+- **`src/app/v2/`** Proof-of-Concept-Routen gelöscht (Komponenten in `components/v2/` bleiben)
+- **Pfad-Fixes:** `dateien-filter-v2.tsx` und `wiki-search-v2.tsx` von `/v2/...` auf `/...` korrigiert
+
 ### Changed — Phase 10: Supabase-Rückstände bereinigen
 - **`.env.local.example`** komplett neu geschrieben — nur noch `JWT_SECRET` + `DATABASE_URL`
 - **`src/lib/types/database.ts`** gelöscht — 340-Zeilen Supabase-generierte Typ-Datei entfernt

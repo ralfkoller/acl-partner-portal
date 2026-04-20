@@ -116,7 +116,7 @@ export function AdminWikiManager({ categories, items }: { categories: Category[]
         <button onClick={openNewItem} className="flex items-center gap-2 py-2.5 px-5 bg-acl-orange hover:bg-acl-orange-hover text-white text-sm font-medium rounded-xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all">
           <Plus className="w-4 h-4" /> Neuer FAQ-Eintrag
         </button>
-        <button onClick={() => setShowCatForm(true)} className="flex items-center gap-2 py-2.5 px-5 bg-acl-light text-acl-dark text-sm font-medium rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors">
+        <button onClick={() => setShowCatForm(true)} className="flex items-center gap-2 py-2.5 px-5 bg-white/[0.07] text-white text-sm font-medium rounded-xl border border-white/[0.12] hover:bg-white/[0.1] transition-colors">
           <Plus className="w-4 h-4" /> Kategorie
         </button>
       </div>
@@ -130,41 +130,41 @@ export function AdminWikiManager({ categories, items }: { categories: Category[]
                 <SectionHeader title={cat.name} />
                 <button
                   onClick={() => setDeleteTarget({ type: "category", id: cat.id })}
-                  className="p-1.5 rounded-lg text-acl-gray hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                  className="p-1.5 rounded-lg text-white/50 hover:text-red-500 hover:bg-red-500/10 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
               <div className="space-y-2">
                 {catItems.map((item) => (
-                  <div key={item.id} className="bg-white rounded-xl px-6 py-3 border border-gray-100/80 flex items-center justify-between">
+                  <div key={item.id} className="rounded-xl bg-white/[0.07] border border-white/[0.12] px-6 py-3 flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm text-acl-dark">{item.question}</span>
+                      <span className="text-sm text-white">{item.question}</span>
                       {!item.isPublished && (
                         <span className="ml-2 px-2 py-0.5 rounded-md text-[10px] font-medium bg-acl-orange/10 text-acl-orange">Entwurf</span>
                       )}
                     </div>
                     <div className="flex items-center gap-1">
-                      <button onClick={() => openEditItem(item)} className="p-1.5 rounded-lg text-acl-gray hover:text-acl-orange hover:bg-acl-orange/10 transition-colors">
+                      <button onClick={() => openEditItem(item)} className="p-1.5 rounded-lg text-white/50 hover:text-acl-orange hover:bg-acl-orange/10 transition-colors">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => setDeleteTarget({ type: "item", id: item.id })} className="p-1.5 rounded-lg text-acl-gray hover:text-red-500 hover:bg-red-500/10 transition-colors">
+                      <button onClick={() => setDeleteTarget({ type: "item", id: item.id })} className="p-1.5 rounded-lg text-white/50 hover:text-red-500 hover:bg-red-500/10 transition-colors">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
                 ))}
                 {catItems.length === 0 && (
-                  <p className="text-sm text-acl-gray px-2">Keine FAQ-Einträge in dieser Kategorie.</p>
+                  <p className="text-sm text-white/50 px-2">Keine FAQ-Einträge in dieser Kategorie.</p>
                 )}
               </div>
             </div>
           )
         })
       ) : (
-        <div className="bg-white rounded-xl p-8 border border-gray-100/80 text-center">
-          <BookOpen className="w-8 h-8 text-acl-gray/40 mx-auto mb-2" />
-          <p className="text-sm text-acl-gray">Erstellen Sie zuerst eine Kategorie.</p>
+        <div className="rounded-xl bg-white/[0.07] border border-white/[0.12] p-8 text-center">
+          <BookOpen className="w-8 h-8 text-white/20 mx-auto mb-2" />
+          <p className="text-sm text-white/50">Erstellen Sie zuerst eine Kategorie.</p>
         </div>
       )}
 

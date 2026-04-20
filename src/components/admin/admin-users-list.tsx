@@ -128,31 +128,31 @@ export function AdminUsersList({ users }: { users: UserType[] }) {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100/80 overflow-hidden">
+      <div className="rounded-xl bg-white/[0.07] border border-white/[0.12] overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-100 bg-acl-light/30">
-              <th className="text-left text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">Name</th>
-              <th className="text-left text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">Unternehmen</th>
-              <th className="text-left text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">Rolle</th>
-              <th className="text-left text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">Registriert</th>
-              <th className="text-right text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">Aktionen</th>
+            <tr className="border-b border-white/[0.06] bg-white/[0.03]">
+              <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">Name</th>
+              <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">Unternehmen</th>
+              <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">Rolle</th>
+              <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">Registriert</th>
+              <th className="text-right text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">Aktionen</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-white/[0.06]">
             {filteredUsers.map((u) => (
-              <tr key={u.id} className="hover:bg-acl-light/30 transition-colors">
+              <tr key={u.id} className="hover:bg-white/[0.05] transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-acl-orange-light flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-acl-dark">
+                      <span className="text-xs font-bold text-white">
                         {u.fullName.split(" ").map(n => n[0]).join("").slice(0, 2)}
                       </span>
                     </div>
-                    <span className="text-sm font-medium text-acl-dark">{u.fullName}</span>
+                    <span className="text-sm font-medium text-white">{u.fullName}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-sm text-acl-gray">{u.company ?? "—"}</td>
+                <td className="px-6 py-4 text-sm text-white/50">{u.company ?? "—"}</td>
                 <td className="px-6 py-4">
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${
                     u.role === "admin"
@@ -163,13 +163,13 @@ export function AdminUsersList({ users }: { users: UserType[] }) {
                     {u.role === "admin" ? "Admin" : "Partner"}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-acl-gray">
+                <td className="px-6 py-4 text-sm text-white/50">
                   {new Date(u.createdAt).toLocaleDateString("de-AT")}
                 </td>
                 <td className="px-6 py-4 text-right flex items-center justify-end gap-3">
                   <button
                     onClick={() => setResetTarget({ id: u.id, name: u.fullName })}
-                    className="text-xs text-acl-gray hover:text-acl-orange transition-colors flex items-center gap-1"
+                    className="text-xs text-white/50 hover:text-acl-orange transition-colors flex items-center gap-1"
                     title="Passwort zurücksetzen"
                   >
                     <KeyRound className="w-3.5 h-3.5" /> Reset
@@ -191,7 +191,7 @@ export function AdminUsersList({ users }: { users: UserType[] }) {
             ))}
             {filteredUsers.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-sm text-acl-gray">
+                <td colSpan={5} className="px-6 py-8 text-center text-sm text-white/50">
                   Keine Benutzer gefunden.
                 </td>
               </tr>

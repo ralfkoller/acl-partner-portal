@@ -1,9 +1,9 @@
 import { db } from "@/lib/db"
 import { faqCategories, faqItems } from "@/lib/db/schema"
 import { eq, asc } from "drizzle-orm"
-import { SectionHeader } from "@/components/portal/section-header"
-import { FaqAccordion } from "@/components/portal/faq-accordion"
-import { WikiSearch } from "@/components/portal/wiki-search"
+import { SectionHeaderV2 } from "@/components/v2/section-header-v2"
+import { FaqAccordionV2 } from "@/components/v2/faq-accordion-v2"
+import { WikiSearchV2 } from "@/components/v2/wiki-search-v2"
 import { BookOpen } from "lucide-react"
 
 export const metadata = {
@@ -58,23 +58,23 @@ export default async function WikiPage({
     .filter((cat) => cat.items.length > 0)
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-acl-dark">Wiki / FAQ</h1>
-        <p className="text-sm text-acl-gray mt-1">
+        <h1 className="text-2xl font-bold text-white">Wiki / FAQ</h1>
+        <p className="text-sm text-white/60 mt-1">
           Antworten auf häufig gestellte Fragen und Wissensdatenbank.
         </p>
       </div>
 
-      <WikiSearch />
+      <WikiSearchV2 />
 
       {groupedItems.length > 0 ? (
         groupedItems.map((category) => (
           <div key={category.id} className="mb-8">
-            <SectionHeader title={category.name} />
+            <SectionHeaderV2 title={category.name} />
             <div className="space-y-3">
               {category.items.map((item) => (
-                <FaqAccordion
+                <FaqAccordionV2
                   key={item.id}
                   question={item.question}
                   answer={extractTextFromTiptapJson(item.answer)}
@@ -84,15 +84,15 @@ export default async function WikiPage({
           </div>
         ))
       ) : (
-        <div className="bg-white rounded-xl p-8 border border-gray-100/80 text-center">
-          <BookOpen className="w-10 h-10 text-acl-gray/40 mx-auto mb-3" />
-          <p className="text-acl-gray text-sm">
+        <div className="v2-glass p-8 text-center">
+          <BookOpen className="w-10 h-10 text-white/20 mx-auto mb-3" />
+          <p className="text-white/60 text-sm">
             {params.search
               ? "Keine Ergebnisse für Ihre Suche."
               : "Noch keine FAQ-Einträge vorhanden."}
           </p>
         </div>
       )}
-    </div>
+    </>
   )
 }

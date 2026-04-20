@@ -4,10 +4,10 @@ import { eq, gte, sql, and } from "drizzle-orm"
 import { getUser } from "@/lib/actions/auth"
 import { redirect } from "next/navigation"
 import { FolderOpen, Calendar, Newspaper, UserCheck } from "lucide-react"
-import { HeroBanner } from "@/components/portal/hero-banner"
-import { StatCard } from "@/components/portal/stat-card"
-import { NewsCard } from "@/components/portal/news-card"
-import { SectionHeader } from "@/components/portal/section-header"
+import { HeroBannerV2 } from "@/components/v2/hero-banner-v2"
+import { StatCardV2 } from "@/components/v2/stat-card-v2"
+import { NewsCardV2 } from "@/components/v2/news-card-v2"
+import { SectionHeaderV2 } from "@/components/v2/section-header-v2"
 
 export const metadata = {
   title: "Dashboard",
@@ -47,20 +47,20 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <HeroBanner userName={user.fullName} />
+      <HeroBannerV2 userName={user.fullName} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
         {stats.map((stat) => (
-          <StatCard key={stat.title} {...stat} />
+          <StatCardV2 key={stat.title} {...stat} />
         ))}
       </div>
 
       <div id="news">
-        <SectionHeader title="Neuigkeiten" />
+        <SectionHeaderV2 title="Neuigkeiten" />
         <div className="space-y-4">
           {latestNews.length > 0 ? (
             latestNews.map((item) => (
-              <NewsCard
+              <NewsCardV2
                 key={item.id}
                 id={item.id}
                 title={item.title}
@@ -69,9 +69,9 @@ export default async function DashboardPage() {
               />
             ))
           ) : (
-            <div className="bg-white rounded-xl p-8 border border-gray-100/80 text-center">
-              <Newspaper className="w-10 h-10 text-acl-gray/40 mx-auto mb-3" />
-              <p className="text-acl-gray text-sm">Noch keine Neuigkeiten vorhanden.</p>
+            <div className="v2-glass p-8 text-center">
+              <Newspaper className="w-10 h-10 text-white/20 mx-auto mb-3" />
+              <p className="text-white/60 text-sm">Noch keine Neuigkeiten vorhanden.</p>
             </div>
           )}
         </div>

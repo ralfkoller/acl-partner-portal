@@ -5,7 +5,7 @@ import { getUser } from "@/lib/actions/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Users, FolderOpen, Calendar, Newspaper, Plus, Upload, UserPlus } from "lucide-react"
-import { SectionHeader } from "@/components/portal/section-header"
+import { SectionHeaderV2 } from "@/components/v2/section-header-v2"
 
 export const metadata = {
   title: "Admin Dashboard",
@@ -50,8 +50,8 @@ export default async function AdminDashboardPage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-acl-dark">Admin Dashboard</h1>
-        <p className="text-sm text-acl-gray mt-1">
+        <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
+        <p className="text-sm text-white/60 mt-1">
           Übersicht über alle Inhalte und Aktivitäten.
         </p>
       </div>
@@ -61,7 +61,7 @@ export default async function AdminDashboardPage() {
         {stats.map((stat) => (
           <div
             key={stat.title}
-            className="bg-white rounded-xl p-6 border border-gray-100/80"
+            className="v2-glass p-6"
             style={{ borderLeft: `4px solid ${stat.accentColor}` }}
           >
             <div className="flex items-center justify-between mb-3">
@@ -72,20 +72,20 @@ export default async function AdminDashboardPage() {
                 <stat.icon className="w-5 h-5" style={{ color: stat.accentColor }} />
               </div>
             </div>
-            <div className="text-2xl font-bold text-acl-dark">{stat.value}</div>
-            <div className="text-sm text-acl-gray mt-1">{stat.title}</div>
+            <div className="text-2xl font-bold text-white">{stat.value}</div>
+            <div className="text-sm text-white/60 mt-1">{stat.title}</div>
           </div>
         ))}
       </div>
 
       {/* Quick Actions */}
-      <SectionHeader title="Schnellaktionen" />
+      <SectionHeaderV2 title="Schnellaktionen" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {quickActions.map((action) => (
           <Link
             key={action.label}
             href={action.href}
-            className="bg-white rounded-xl p-4 border border-gray-100/80 card-hover flex items-center gap-3 text-sm font-medium text-acl-dark hover:text-acl-orange transition-colors"
+            className="v2-glass v2-border-animate flex items-center gap-3 p-4 text-sm font-medium text-white/80 hover:text-acl-orange transition-colors"
           >
             <div className="w-8 h-8 rounded-xl bg-acl-orange/10 flex items-center justify-center flex-shrink-0">
               <action.icon className="w-4 h-4 text-acl-orange" />
@@ -96,20 +96,20 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Recent Activity */}
-      <SectionHeader title="Letzte Aktivitäten" />
-      <div className="bg-white rounded-xl border border-gray-100/80 divide-y divide-gray-100">
+      <SectionHeaderV2 title="Letzte Aktivitäten" />
+      <div className="v2-glass divide-y divide-white/[0.06]">
         {recentNews.map((item) => (
           <div key={item.id} className="px-6 py-4 flex items-center justify-between">
             <div>
-              <div className="text-sm font-medium text-acl-dark">{item.title}</div>
-              <div className="text-xs text-acl-gray mt-0.5">
+              <div className="text-sm font-medium text-white">{item.title}</div>
+              <div className="text-xs text-white/50 mt-0.5">
                 {new Date(item.createdAt).toLocaleDateString("de-AT")}
               </div>
             </div>
             <span
               className={`px-2.5 py-1 rounded-md text-xs font-medium ${
                 item.isPublished
-                  ? "bg-emerald-500/10 text-emerald-600"
+                  ? "bg-emerald-500/10 text-emerald-400"
                   : "bg-acl-orange/10 text-acl-orange"
               }`}
             >
@@ -118,7 +118,7 @@ export default async function AdminDashboardPage() {
           </div>
         ))}
         {recentNews.length === 0 && (
-          <div className="px-6 py-8 text-center text-sm text-acl-gray">
+          <div className="px-6 py-8 text-center text-sm text-white/50">
             Noch keine Aktivitäten.
           </div>
         )}

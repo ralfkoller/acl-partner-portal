@@ -138,13 +138,13 @@ export function AdminEventsList({ events, registrations }: AdminEventsListProps)
           return (
             <div
               key={event.id}
-              className="bg-white rounded-xl border border-gray-100/80 overflow-hidden"
+              className="rounded-xl bg-white/[0.07] border border-white/[0.12] overflow-hidden"
               style={{ borderLeft: "4px solid #3b82f6" }}
             >
               <div className="px-6 py-4 flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-sm font-semibold text-acl-dark">{event.title}</h3>
+                    <h3 className="text-sm font-semibold text-white">{event.title}</h3>
                     <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium ${
                       event.isPublished
                         ? "bg-emerald-500/10 text-emerald-600"
@@ -153,7 +153,7 @@ export function AdminEventsList({ events, registrations }: AdminEventsListProps)
                       {event.isPublished ? "Veröffentlicht" : "Entwurf"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-acl-gray">
+                  <div className="flex items-center gap-4 text-xs text-white/50">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
                       {format(new Date(event.startDate), "dd.MM.yyyy HH:mm", { locale: de })}
@@ -172,20 +172,20 @@ export function AdminEventsList({ events, registrations }: AdminEventsListProps)
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setExpandedEvent(isExpanded ? null : event.id)}
-                    className="p-1.5 rounded-lg text-acl-gray hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
+                    className="p-1.5 rounded-lg text-white/50 hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
                     title="Teilnehmer anzeigen"
                   >
                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
                   <button
                     onClick={() => openEditForm(event)}
-                    className="p-1.5 rounded-lg text-acl-gray hover:text-acl-orange hover:bg-acl-orange/10 transition-colors"
+                    className="p-1.5 rounded-lg text-white/50 hover:text-acl-orange hover:bg-acl-orange/10 transition-colors"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setDeleteId(event.id)}
-                    className="p-1.5 rounded-lg text-acl-gray hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                    className="p-1.5 rounded-lg text-white/50 hover:text-red-500 hover:bg-red-500/10 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -194,8 +194,8 @@ export function AdminEventsList({ events, registrations }: AdminEventsListProps)
 
               {/* Attendees */}
               {isExpanded && (
-                <div className="px-6 pb-4 border-t border-gray-100">
-                  <div className="text-xs font-medium text-acl-gray uppercase tracking-wider mt-3 mb-2">
+                <div className="px-6 pb-4 border-t border-white/[0.06]">
+                  <div className="text-xs font-medium text-white/50 uppercase tracking-wider mt-3 mb-2">
                     Teilnehmer ({attendees.length})
                   </div>
                   {attendees.length > 0 ? (
@@ -203,17 +203,17 @@ export function AdminEventsList({ events, registrations }: AdminEventsListProps)
                       {attendees.map((a, i) => (
                         <div key={i} className="flex items-center gap-2 text-sm">
                           <div className="w-6 h-6 rounded-full bg-acl-orange-light flex items-center justify-center flex-shrink-0">
-                            <span className="text-[10px] font-bold text-acl-dark">
+                             <span className="text-[10px] font-bold text-white">
                               {a.fullName[0]}
                             </span>
                           </div>
-                          <span className="text-acl-dark">{a.fullName}</span>
-                          {a.company && <span className="text-acl-gray text-xs">({a.company})</span>}
+                          <span className="text-white">{a.fullName}</span>
+                          {a.company && <span className="text-white/50 text-xs">({a.company})</span>}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-acl-gray">Noch keine Anmeldungen.</p>
+                    <p className="text-sm text-white/50">Noch keine Anmeldungen.</p>
                   )}
                 </div>
               )}
@@ -222,9 +222,9 @@ export function AdminEventsList({ events, registrations }: AdminEventsListProps)
         })}
 
         {events.length === 0 && (
-          <div className="bg-white rounded-xl p-8 border border-gray-100/80 text-center">
-            <Calendar className="w-8 h-8 text-acl-gray/40 mx-auto mb-2" />
-            <p className="text-sm text-acl-gray">Noch keine Events erstellt.</p>
+          <div className="rounded-xl bg-white/[0.07] border border-white/[0.12] p-8 text-center">
+            <Calendar className="w-8 h-8 text-white/20 mx-auto mb-2" />
+            <p className="text-sm text-white/50">Noch keine Events erstellt.</p>
           </div>
         )}
       </div>

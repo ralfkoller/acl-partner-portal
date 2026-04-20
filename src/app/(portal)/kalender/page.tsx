@@ -3,9 +3,9 @@ import { events, eventRegistrations } from "@/lib/db/schema"
 import { eq, asc } from "drizzle-orm"
 import { getUser } from "@/lib/actions/auth"
 import { redirect } from "next/navigation"
-import { CalendarGrid } from "@/components/portal/calendar-grid"
-import { EventCard } from "@/components/portal/event-card"
-import { SectionHeader } from "@/components/portal/section-header"
+import { CalendarGridV2 } from "@/components/v2/calendar-grid-v2"
+import { EventCardV2 } from "@/components/v2/event-card-v2"
+import { SectionHeaderV2 } from "@/components/v2/section-header-v2"
 import { Calendar } from "lucide-react"
 
 export const metadata = {
@@ -35,20 +35,20 @@ export default async function KalenderPage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-acl-dark">Kalender</h1>
-        <p className="text-sm text-acl-gray mt-1">
+        <h1 className="text-2xl font-bold text-white">Kalender</h1>
+        <p className="text-sm text-white/60 mt-1">
           Entdecken Sie kommende Events und melden Sie sich direkt an.
         </p>
       </div>
 
-      <CalendarGrid events={allEvents} />
+      <CalendarGridV2 events={allEvents} />
 
-      <SectionHeader title="Kommende Events" />
+      <SectionHeaderV2 title="Kommende Events" />
 
       <div className="space-y-4">
         {upcomingEvents.length > 0 ? (
           upcomingEvents.map((event) => (
-            <EventCard
+            <EventCardV2
               key={event.id}
               id={event.id}
               title={event.title}
@@ -62,9 +62,9 @@ export default async function KalenderPage() {
             />
           ))
         ) : (
-          <div className="bg-white rounded-xl p-8 border border-gray-100/80 text-center">
-            <Calendar className="w-10 h-10 text-acl-gray/40 mx-auto mb-3" />
-            <p className="text-acl-gray text-sm">Keine kommenden Events.</p>
+          <div className="v2-glass p-8 text-center">
+            <Calendar className="w-10 h-10 text-white/20 mx-auto mb-3" />
+            <p className="text-white/60 text-sm">Keine kommenden Events.</p>
           </div>
         )}
       </div>

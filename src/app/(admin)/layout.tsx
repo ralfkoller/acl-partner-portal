@@ -18,7 +18,13 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-[#080808]">
+      {/* Pattern backdrop */}
+      <div className="fixed inset-0 -z-20 bg-[#080808]" />
+      <div
+        className="fixed inset-0 -z-10 opacity-[0.03]"
+        style={{ backgroundImage: "url('/v2/pattern.jpg')", backgroundSize: "cover" }}
+      />
       <AdminSidebar user={user} />
       <main className="flex-1 lg:ml-[260px]">
         <div className="animate-fade-in p-6 lg:p-8">

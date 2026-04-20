@@ -16,8 +16,8 @@ export default async function AdminWikiPage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-acl-dark">Wiki / FAQ verwalten</h1>
-        <p className="text-sm text-acl-gray mt-1">
+        <h1 className="text-2xl font-bold text-white">Wiki / FAQ verwalten</h1>
+        <p className="text-sm text-white/60 mt-1">
           Verwalten Sie Kategorien und FAQ-Einträge.
         </p>
       </div>

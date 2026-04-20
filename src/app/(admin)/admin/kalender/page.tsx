@@ -34,8 +34,8 @@ export default async function AdminKalenderPage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-acl-dark">Events verwalten</h1>
-        <p className="text-sm text-acl-gray mt-1">
+        <h1 className="text-2xl font-bold text-white">Events verwalten</h1>
+        <p className="text-sm text-white/60 mt-1">
           Erstellen und verwalten Sie Events und Teilnehmerlisten.
         </p>
       </div>

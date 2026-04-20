@@ -16,8 +16,8 @@ export default async function AdminDateienPage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-acl-dark">Dateien verwalten</h1>
-        <p className="text-sm text-acl-gray mt-1">
+        <h1 className="text-2xl font-bold text-white">Dateien verwalten</h1>
+        <p className="text-sm text-white/60 mt-1">
           Laden Sie Dateien hoch und verwalten Sie Kategorien.
         </p>
       </div>

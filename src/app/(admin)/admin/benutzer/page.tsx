@@ -13,8 +13,8 @@ export default async function AdminBenutzerPage() {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-acl-dark">Benutzer verwalten</h1>
-        <p className="text-sm text-acl-gray mt-1">
+        <h1 className="text-2xl font-bold text-white">Benutzer verwalten</h1>
+        <p className="text-sm text-white/60 mt-1">
           Verwalten Sie Partner-Zugänge und Rollen.
         </p>
       </div>

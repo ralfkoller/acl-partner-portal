@@ -122,39 +122,39 @@ export function AdminFilesList({
         </button>
         <button
           onClick={() => setShowCategory(true)}
-          className="flex items-center gap-2 py-2.5 px-5 bg-acl-light text-acl-dark text-sm font-medium rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors"
+          className="flex items-center gap-2 py-2.5 px-5 bg-white/[0.07] text-white text-sm font-medium rounded-xl border border-white/[0.12] hover:bg-white/[0.1] transition-colors"
         >
           <Plus className="w-4 h-4" /> Kategorie
         </button>
       </div>
 
       {/* Files Table */}
-      <div className="bg-white rounded-xl border border-gray-100/80 overflow-hidden">
+      <div className="rounded-xl bg-white/[0.07] border border-white/[0.12] overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-100 bg-acl-light/30">
-              <th className="text-left text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">Name</th>
-              <th className="text-left text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">Kategorie</th>
-              <th className="text-left text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">Größe</th>
-              <th className="text-left text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">Datum</th>
-              <th className="text-right text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">Aktionen</th>
+            <tr className="border-b border-white/[0.06] bg-white/[0.03]">
+              <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">Name</th>
+              <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">Kategorie</th>
+              <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">Größe</th>
+              <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">Datum</th>
+              <th className="text-right text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">Aktionen</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-white/[0.06]">
             {files.map((f) => {
               const cat = categories.find(c => c.id === f.categoryId)
               return (
-                <tr key={f.id} className="hover:bg-acl-light/30 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-acl-dark">{f.name}</td>
-                  <td className="px-6 py-4 text-sm text-acl-gray">{cat?.name ?? "—"}</td>
-                  <td className="px-6 py-4 text-sm text-acl-gray">{formatSize(f.fileSize)}</td>
-                  <td className="px-6 py-4 text-sm text-acl-gray">
+                <tr key={f.id} className="hover:bg-white/[0.05] transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-white">{f.name}</td>
+                  <td className="px-6 py-4 text-sm text-white/50">{cat?.name ?? "—"}</td>
+                  <td className="px-6 py-4 text-sm text-white/50">{formatSize(f.fileSize)}</td>
+                  <td className="px-6 py-4 text-sm text-white/50">
                     {new Date(f.createdAt).toLocaleDateString("de-AT")}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button
                       onClick={() => setDeleteTarget({ id: f.id, path: f.storagePath })}
-                      className="p-1.5 rounded-lg text-acl-gray hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                      className="p-1.5 rounded-lg text-white/50 hover:text-red-500 hover:bg-red-500/10 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -164,8 +164,8 @@ export function AdminFilesList({
             })}
             {files.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-sm text-acl-gray">
-                  <FolderOpen className="w-8 h-8 text-acl-gray/40 mx-auto mb-2" />
+                <td colSpan={5} className="px-6 py-8 text-center text-sm text-white/50">
+                  <FolderOpen className="w-8 h-8 text-white/20 mx-auto mb-2" />
                   Noch keine Dateien hochgeladen.
                 </td>
               </tr>

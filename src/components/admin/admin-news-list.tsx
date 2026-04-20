@@ -50,32 +50,32 @@ export function AdminNewsList({ news }: { news: NewsItem[] }) {
 
   return (
     <>
-      <div className="bg-white rounded-xl border border-gray-100/80 overflow-hidden">
+      <div className="rounded-xl bg-white/[0.07] border border-white/[0.12] overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-100 bg-acl-light/30">
-              <th className="text-left text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">
+            <tr className="border-b border-white/[0.06] bg-white/[0.03]">
+              <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">
                 Titel
               </th>
-              <th className="text-left text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">
+              <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">
                 Status
               </th>
-              <th className="text-left text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">
+              <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">
                 Autor
               </th>
-              <th className="text-left text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">
+              <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">
                 Datum
               </th>
-              <th className="text-right text-xs font-medium text-acl-gray uppercase tracking-wider px-6 py-3">
+              <th className="text-right text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-3">
                 Aktionen
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-white/[0.06]">
             {news.map((item) => (
-              <tr key={item.id} className="hover:bg-acl-light/30 transition-colors">
+              <tr key={item.id} className="hover:bg-white/[0.05] transition-colors">
                 <td className="px-6 py-4">
-                  <span className="text-sm font-medium text-acl-dark">{item.title}</span>
+                  <span className="text-sm font-medium text-white">{item.title}</span>
                 </td>
                 <td className="px-6 py-4">
                   <button
@@ -90,23 +90,23 @@ export function AdminNewsList({ news }: { news: NewsItem[] }) {
                     {item.isPublished ? "Veröffentlicht" : "Entwurf"}
                   </button>
                 </td>
-                <td className="px-6 py-4 text-sm text-acl-gray">
+                <td className="px-6 py-4 text-sm text-white/50">
                   {item.authorName ?? "—"}
                 </td>
-                <td className="px-6 py-4 text-sm text-acl-gray">
+                <td className="px-6 py-4 text-sm text-white/50">
                   {new Date(item.createdAt).toLocaleDateString("de-AT")}
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <Link
                       href={`/admin/news/${item.id}`}
-                      className="p-1.5 rounded-lg text-acl-gray hover:text-acl-orange hover:bg-acl-orange/10 transition-colors"
+                      className="p-1.5 rounded-lg text-white/50 hover:text-acl-orange hover:bg-acl-orange/10 transition-colors"
                     >
                       <Pencil className="w-4 h-4" />
                     </Link>
                     <button
                       onClick={() => setDeleteId(item.id)}
-                      className="p-1.5 rounded-lg text-acl-gray hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                      className="p-1.5 rounded-lg text-white/50 hover:text-red-500 hover:bg-red-500/10 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -116,7 +116,7 @@ export function AdminNewsList({ news }: { news: NewsItem[] }) {
             ))}
             {news.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-sm text-acl-gray">
+                <td colSpan={5} className="px-6 py-8 text-center text-sm text-white/50">
                   Noch keine Artikel vorhanden.
                 </td>
               </tr>

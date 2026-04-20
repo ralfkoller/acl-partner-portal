@@ -57,19 +57,19 @@ export function NewsEditor({ news }: NewsEditorProps) {
     <>
       <Link
         href="/admin/news"
-        className="flex items-center gap-2 text-sm text-acl-gray hover:text-acl-dark mb-6 transition-colors"
+        className="flex items-center gap-2 text-sm text-white/50 hover:text-white mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" /> Zurück zur Übersicht
       </Link>
 
-      <h1 className="text-2xl font-bold text-acl-dark mb-6">
+      <h1 className="text-2xl font-bold text-white mb-6">
         {isEditing ? "Artikel bearbeiten" : "Neuer Artikel"}
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
-        <div className="bg-white rounded-xl p-6 border border-gray-100/80 space-y-5">
+        <div className="rounded-xl bg-white/[0.07] border border-white/[0.12] p-6 space-y-5">
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-acl-dark">Titel</Label>
+            <Label className="text-sm font-medium text-white">Titel</Label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -80,7 +80,7 @@ export function NewsEditor({ news }: NewsEditorProps) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-acl-dark">Vorschautext</Label>
+            <Label className="text-sm font-medium text-white">Vorschautext</Label>
             <Textarea
               value={excerpt}
               onChange={(e) => setExcerpt(e.target.value)}
@@ -91,7 +91,7 @@ export function NewsEditor({ news }: NewsEditorProps) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-acl-dark">Inhalt</Label>
+            <Label className="text-sm font-medium text-white">Inhalt</Label>
             <TiptapEditor content={content} onChange={setContent} />
           </div>
 
@@ -102,7 +102,7 @@ export function NewsEditor({ news }: NewsEditorProps) {
               onCheckedChange={(checked) => setIsPublished(checked as boolean)}
               className="border-gray-300 data-[state=checked]:bg-acl-orange data-[state=checked]:border-acl-orange"
             />
-            <Label htmlFor="published" className="text-sm text-acl-dark cursor-pointer">
+            <Label htmlFor="published" className="text-sm text-white cursor-pointer">
               Sofort veröffentlichen
             </Label>
           </div>
@@ -118,7 +118,7 @@ export function NewsEditor({ news }: NewsEditorProps) {
           </button>
           <Link
             href="/admin/news"
-            className="py-3 px-6 bg-acl-light text-acl-dark font-medium rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors"
+            className="py-3 px-6 bg-white/[0.07] text-white font-medium rounded-xl border border-white/[0.12] hover:bg-white/[0.1] transition-colors"
           >
             Abbrechen
           </Link>
