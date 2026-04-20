@@ -282,7 +282,8 @@
 /* Animated border on hover */
 .v2-border-animate {
   position: relative;
-  overflow: hidden;
+  /* overflow: hidden ENTFERNT — blockiert Click-Events in Safari/WebKit
+     wenn backdrop-filter aktiv ist (bekannter WebKit Stacking-Context Bug) */
 }
 
 .v2-border-animate::before {
@@ -299,10 +300,19 @@
   opacity: 0;
   transition: opacity 0.3s;
   pointer-events: none;
+  /* z-index explizit unter dem Content halten */
+  z-index: 0;
 }
 
 .v2-border-animate:hover::before {
   opacity: 1;
+}
+
+/* Stellt sicher dass Card-Inhalte über dem ::before Pseudo-Element liegen.
+   Notwendig für Safari/WebKit wegen backdrop-filter Stacking-Context. */
+.v2-border-animate > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Stat number pulse */

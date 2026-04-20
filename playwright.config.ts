@@ -43,11 +43,25 @@ export default defineConfig({
       dependencies: ["setup"],
       testMatch: /.*portal.*\.spec\.ts/,
     },
-    // Login-Tests ohne Auth-State (testen den Login selbst)
+    // Safari/WebKit Diagnose (gleiche Session wie portal)
     {
-      name: "chromium-no-auth",
-      use: { ...devices["Desktop Chrome"] },
-      testMatch: /.*login.*\.spec\.ts/,
+      name: "webkit",
+      use: {
+        ...devices["Desktop Safari"],
+        storageState: "e2e/.auth/user.json",
+      },
+      dependencies: ["setup"],
+      testMatch: /.*safari-diagnose.*\.spec\.ts/,
+    },
+    // Chromium Diagnose (Vergleich)
+    {
+      name: "chromium-diagnose",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "e2e/.auth/user.json",
+      },
+      dependencies: ["setup"],
+      testMatch: /.*safari-diagnose.*\.spec\.ts/,
     },
   ],
   webServer: {
