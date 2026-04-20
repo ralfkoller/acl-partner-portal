@@ -4,6 +4,7 @@ import { eq, asc, desc, like } from "drizzle-orm"
 import { FileCardV2 } from "@/components/v2/file-card-v2"
 import { DateienFilterV2 } from "@/components/v2/dateien-filter-v2"
 import { FolderOpen } from "lucide-react"
+import { Suspense } from "react"
 
 export const metadata = {
   title: "Dateien",
@@ -57,7 +58,9 @@ export default async function DateienPage({
         </div>
       </div>
 
-      <DateienFilterV2 categories={allCategories} />
+      <Suspense fallback={<div className="mb-6 h-20" />}>
+        <DateienFilterV2 categories={allCategories} />
+      </Suspense>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {allFiles.length > 0 ? (

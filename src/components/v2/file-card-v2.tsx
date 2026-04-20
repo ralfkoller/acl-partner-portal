@@ -41,11 +41,7 @@ export function FileCardV2({
   storagePath,
 }: FileCardV2Props) {
   const { icon: FileIcon, color } = getFileIcon(mimeType)
-
-  function handleDownload() {
-    const url = `/uploads/${storagePath}`
-    window.open(url, "_blank")
-  }
+  const downloadUrl = `/uploads/${storagePath}`
 
   return (
     <div className="group v2-glass v2-border-animate p-6 relative">
@@ -72,12 +68,14 @@ export function FileCardV2({
             )}
           </div>
         </div>
-        <button
-          onClick={handleDownload}
-          className="opacity-0 group-hover:opacity-100 p-2 rounded-xl bg-acl-orange/10 text-acl-orange hover:bg-acl-orange hover:text-white transition-all"
+        <a
+          href={downloadUrl}
+          download={name}
+          className="opacity-0 group-hover:opacity-100 p-2 rounded-xl bg-acl-orange/10 text-acl-orange hover:bg-acl-orange hover:text-white transition-all relative z-10"
+          aria-label={`${name} herunterladen`}
         >
           <Download className="w-4 h-4" />
-        </button>
+        </a>
       </div>
     </div>
   )
