@@ -2,36 +2,31 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { UserPlus, Shield, User, Search, Eye, EyeOff } from "lucide-react"
-import { updateUserRole, createUser, inviteUser } from "@/lib/actions/users"
+import { UserPlus, Shield, User, Search, Eye, EyeOff, KeyRound } from "lucide-react"
+import { updateUserRole, createUser, resetUserPassword } from "@/lib/actions/users"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-
-interface UserProfile {
-  id: string
-  full_name: string
-  company: string | null
-  role: "admin" | "partner"
-  created_at: string
-}
+import type { User as UserType } from "@/lib/db/schema"
 
 const INPUT_CLASS = "rounded-xl bg-acl-light/50 border-gray-200 focus:border-acl-orange focus:ring-2 focus:ring-acl-orange/20"
 const SUBMIT_CLASS = "w-full py-3 px-6 bg-acl-orange hover:bg-acl-orange-hover text-white font-medium rounded-xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
 
-export function AdminUsersList({ users }: { users: UserProfile[] }) {
+export function AdminUsersList({ users }: { users: UserType[] }) {
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
   const [showDialog, setShowDialog] = useState(false)
-  const [activeTab, setActiveTab] = useState<"create" | "invite">("create")
   const [roleChange, setRoleChange] = useState<{ id: string; name: string; newRole: "admin" | "partner" } | null>(null)
+  const [resetTarget, setResetTarget] = useState<{ id: string; name: string } | null>(null)
+  const [newPassword, setNewPassword] = useState("")
+  const [showNewPassword, setShowNewPassword] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
-  // Shared form fields
+  // Create form fields
   const [formEmail, setFormEmail] = useState("")
   const [formName, setFormName] = useState("")
   const [formCompany, setFormCompany] = useState("")
@@ -41,7 +36,7 @@ export function AdminUsersList({ users }: { users: UserProfile[] }) {
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
-      u.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      u.fullName.toLowerCase().includes(search.toLowerCase()) ||
       (u.company?.toLowerCase().includes(search.toLowerCase()) ?? false)
     const matchesRole = roleFilter === "all" || u.role === roleFilter
     return matchesSearch && matchesRole
@@ -54,12 +49,6 @@ export function AdminUsersList({ users }: { users: UserProfile[] }) {
     setFormRole("partner")
     setFormPassword("")
     setShowPassword(false)
-  }
-
-  function handleOpenDialog(tab: "create" | "invite") {
-    resetForm()
-    setActiveTab(tab)
-    setShowDialog(true)
   }
 
   function handleRoleChange() {
@@ -75,25 +64,33 @@ export function AdminUsersList({ users }: { users: UserProfile[] }) {
     })
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     startTransition(async () => {
-      const result = activeTab === "create"
-        ? await createUser(formData)
-        : await inviteUser(formData)
-
+      const result = await createUser(formData)
       if (result.error) {
         toast.error(result.error)
       } else {
-        toast.success(
-          activeTab === "create"
-            ? "Benutzer wurde erstellt."
-            : "Einladung wurde gesendet."
-        )
+        toast.success("Benutzer wurde erstellt.")
         setShowDialog(false)
         resetForm()
         router.refresh()
+      }
+    })
+  }
+
+  function handlePasswordReset(e: React.FormEvent) {
+    e.preventDefault()
+    if (!resetTarget) return
+    startTransition(async () => {
+      const result = await resetUserPassword(resetTarget.id, newPassword)
+      if (result.error) {
+        toast.error(result.error)
+      } else {
+        toast.success(`Passwort für ${resetTarget.name} zurückgesetzt.`)
+        setResetTarget(null)
+        setNewPassword("")
       }
     })
   }
@@ -123,20 +120,12 @@ export function AdminUsersList({ users }: { users: UserProfile[] }) {
           </Select>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleOpenDialog("invite")}
-            className="flex items-center gap-2 py-2.5 px-5 bg-white hover:bg-acl-light border border-gray-200 text-acl-dark text-sm font-medium rounded-xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all"
-          >
-            <UserPlus className="w-4 h-4" /> Partner einladen
-          </button>
-          <button
-            onClick={() => handleOpenDialog("create")}
-            className="flex items-center gap-2 py-2.5 px-5 bg-acl-orange hover:bg-acl-orange-hover text-white text-sm font-medium rounded-xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all"
-          >
-            <UserPlus className="w-4 h-4" /> Benutzer erstellen
-          </button>
-        </div>
+        <button
+          onClick={() => { resetForm(); setShowDialog(true) }}
+          className="flex items-center gap-2 py-2.5 px-5 bg-acl-orange hover:bg-acl-orange-hover text-white text-sm font-medium rounded-xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all"
+        >
+          <UserPlus className="w-4 h-4" /> Benutzer erstellen
+        </button>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100/80 overflow-hidden">
@@ -157,10 +146,10 @@ export function AdminUsersList({ users }: { users: UserProfile[] }) {
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-acl-orange-light flex items-center justify-center flex-shrink-0">
                       <span className="text-xs font-bold text-acl-dark">
-                        {u.full_name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                        {u.fullName.split(" ").map(n => n[0]).join("").slice(0, 2)}
                       </span>
                     </div>
-                    <span className="text-sm font-medium text-acl-dark">{u.full_name}</span>
+                    <span className="text-sm font-medium text-acl-dark">{u.fullName}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm text-acl-gray">{u.company ?? "—"}</td>
@@ -175,14 +164,21 @@ export function AdminUsersList({ users }: { users: UserProfile[] }) {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm text-acl-gray">
-                  {new Date(u.created_at).toLocaleDateString("de-AT")}
+                  {new Date(u.createdAt).toLocaleDateString("de-AT")}
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-6 py-4 text-right flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => setResetTarget({ id: u.id, name: u.fullName })}
+                    className="text-xs text-acl-gray hover:text-acl-orange transition-colors flex items-center gap-1"
+                    title="Passwort zurücksetzen"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" /> Reset
+                  </button>
                   <button
                     onClick={() =>
                       setRoleChange({
                         id: u.id,
-                        name: u.full_name,
+                        name: u.fullName,
                         newRole: u.role === "admin" ? "partner" : "admin",
                       })
                     }
@@ -204,113 +200,51 @@ export function AdminUsersList({ users }: { users: UserProfile[] }) {
         </table>
       </div>
 
-      {/* Create / Invite Dialog */}
+      {/* Create Dialog */}
       <Dialog open={showDialog} onOpenChange={(open) => { if (!open) { setShowDialog(false); resetForm() } }}>
         <DialogContent className="rounded-xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-acl-dark">Benutzer hinzufügen</DialogTitle>
+            <DialogTitle className="text-acl-dark">Benutzer erstellen</DialogTitle>
           </DialogHeader>
+          <p className="text-xs text-acl-gray -mt-1 mb-1">
+            Benutzer wird sofort angelegt. Der Admin vergibt das initiale Passwort.
+          </p>
 
-          {/* Tabs */}
-          <div className="flex rounded-xl bg-acl-light p-1 mb-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab("create")}
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-                activeTab === "create"
-                  ? "bg-white text-acl-dark shadow-sm"
-                  : "text-acl-gray hover:text-acl-dark"
-              }`}
-            >
-              Erstellen
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("invite")}
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-                activeTab === "invite"
-                  ? "bg-white text-acl-dark shadow-sm"
-                  : "text-acl-gray hover:text-acl-dark"
-              }`}
-            >
-              Einladen
-            </button>
-          </div>
-
-          {activeTab === "create" && (
-            <p className="text-xs text-acl-gray -mt-1 mb-1">
-              Benutzer wird sofort angelegt. Der Admin vergibt das initiale Passwort.
-            </p>
-          )}
-          {activeTab === "invite" && (
-            <p className="text-xs text-acl-gray -mt-1 mb-1">
-              Supabase sendet eine Einladungs-Email. Der Benutzer setzt sein Passwort selbst.
-            </p>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* hidden role field for FormData */}
+          <form onSubmit={handleCreate} className="space-y-4">
             <input type="hidden" name="role" value={formRole} />
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-acl-dark">Name</Label>
-              <Input
-                name="full_name"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                placeholder="Max Mustermann"
-                required
-                className={INPUT_CLASS}
-              />
+              <Input name="full_name" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Max Mustermann" required className={INPUT_CLASS} />
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-acl-dark">E-Mail</Label>
-              <Input
-                name="email"
-                value={formEmail}
-                onChange={(e) => setFormEmail(e.target.value)}
-                type="email"
-                placeholder="max@unternehmen.at"
-                required
-                className={INPUT_CLASS}
-              />
+              <Input name="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} type="email" placeholder="max@unternehmen.at" required className={INPUT_CLASS} />
             </div>
 
-            {activeTab === "create" && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-acl-dark">Passwort</Label>
-                <div className="relative">
-                  <Input
-                    name="password"
-                    value={formPassword}
-                    onChange={(e) => setFormPassword(e.target.value)}
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Mindestens 8 Zeichen"
-                    minLength={8}
-                    required
-                    className={`pr-11 ${INPUT_CLASS}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-acl-gray hover:text-acl-dark transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-acl-dark">Passwort</Label>
+              <div className="relative">
+                <Input
+                  name="password"
+                  value={formPassword}
+                  onChange={(e) => setFormPassword(e.target.value)}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Mindestens 8 Zeichen"
+                  minLength={8}
+                  required
+                  className={`pr-11 ${INPUT_CLASS}`}
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-acl-gray hover:text-acl-dark transition-colors">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
-            )}
+            </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-acl-dark">Unternehmen <span className="text-acl-gray font-normal">(optional)</span></Label>
-              <Input
-                name="company"
-                value={formCompany}
-                onChange={(e) => setFormCompany(e.target.value)}
-                placeholder="Unternehmen GmbH"
-                className={INPUT_CLASS}
-              />
+              <Input name="company" value={formCompany} onChange={(e) => setFormCompany(e.target.value)} placeholder="Unternehmen GmbH" className={INPUT_CLASS} />
             </div>
 
             <div className="space-y-2">
@@ -325,10 +259,43 @@ export function AdminUsersList({ users }: { users: UserProfile[] }) {
             </div>
 
             <button type="submit" disabled={isPending} className={SUBMIT_CLASS}>
-              {isPending
-                ? activeTab === "create" ? "Wird erstellt..." : "Wird eingeladen..."
-                : activeTab === "create" ? "Benutzer erstellen" : "Einladung senden"
-              }
+              {isPending ? "Wird erstellt..." : "Benutzer erstellen"}
+            </button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Reset Dialog */}
+      <Dialog open={resetTarget !== null} onOpenChange={(open) => { if (!open) { setResetTarget(null); setNewPassword("") } }}>
+        <DialogContent className="rounded-xl sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-acl-dark">Passwort zurücksetzen</DialogTitle>
+          </DialogHeader>
+          {resetTarget && (
+            <p className="text-sm text-acl-gray -mt-1 mb-1">
+              Neues Passwort für <strong>{resetTarget.name}</strong> setzen. Der Benutzer muss es beim nächsten Login ändern.
+            </p>
+          )}
+          <form onSubmit={handlePasswordReset} className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-acl-dark">Neues Passwort</Label>
+              <div className="relative">
+                <Input
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Mindestens 8 Zeichen"
+                  minLength={8}
+                  required
+                  className={`pr-11 ${INPUT_CLASS}`}
+                />
+                <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-acl-gray hover:text-acl-dark transition-colors">
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <button type="submit" disabled={isPending || newPassword.length < 8} className={SUBMIT_CLASS}>
+              {isPending ? "Wird gespeichert..." : "Passwort setzen"}
             </button>
           </form>
         </DialogContent>

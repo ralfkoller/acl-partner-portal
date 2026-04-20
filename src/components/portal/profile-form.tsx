@@ -3,17 +3,17 @@
 import { useState, useTransition } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import type { Tables } from "@/lib/types/database"
+import { updateProfile } from "@/lib/actions/profile"
+import type { User } from "@/lib/db/schema"
 
 interface ProfileFormProps {
-  user: Tables<"profiles">
+  user: User
 }
 
 export function ProfileForm({ user }: ProfileFormProps) {
-  const [fullName, setFullName] = useState(user.full_name)
+  const [fullName, setFullName] = useState(user.fullName)
   const [company, setCompany] = useState(user.company ?? "")
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
@@ -21,14 +21,13 @@ export function ProfileForm({ user }: ProfileFormProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     startTransition(async () => {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from("profiles")
-        .update({ full_name: fullName, company: company || null })
-        .eq("id", user.id)
+      const formData = new FormData()
+      formData.set("full_name", fullName)
+      formData.set("company", company)
 
-      if (error) {
-        toast.error("Fehler beim Speichern")
+      const result = await updateProfile(formData)
+      if (result.error) {
+        toast.error(result.error)
       } else {
         toast.success("Profil aktualisiert")
         router.refresh()
@@ -58,7 +57,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
       <div className="space-y-2">
         <Label className="text-sm font-medium text-acl-dark">E-Mail</Label>
         <Input
-          value={user.id}
+          value={user.email}
           disabled
           className="rounded-xl bg-acl-light/30 border-gray-200 text-acl-gray cursor-not-allowed"
         />

@@ -1,4 +1,6 @@
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { events, eventRegistrations } from "@/lib/db/schema"
+import { eq, asc } from "drizzle-orm"
 import { getUser } from "@/lib/actions/auth"
 import { redirect } from "next/navigation"
 import { CalendarGrid } from "@/components/portal/calendar-grid"
@@ -14,43 +16,21 @@ export default async function KalenderPage() {
   const user = await getUser()
   if (!user) redirect("/login")
 
-  const supabase = await createClient()
-
-  const [eventsResult, registrationsResult] = await Promise.all([
-    supabase
-      .from("events")
-      .select("*")
-      .eq("is_published", true)
-      .order("start_date", { ascending: true }),
-    supabase
-      .from("event_registrations")
-      .select("event_id")
-      .eq("user_id", user.id),
+  const [allEvents, userRegs, allRegs] = await Promise.all([
+    db.select().from(events).where(eq(events.isPublished, true)).orderBy(asc(events.startDate)),
+    db.select({ eventId: eventRegistrations.eventId }).from(eventRegistrations).where(eq(eventRegistrations.userId, user.id)),
+    db.select({ eventId: eventRegistrations.eventId }).from(eventRegistrations),
   ])
 
-  const events = eventsResult.data ?? []
-  const registeredEventIds = new Set(
-    (registrationsResult.data ?? []).map((r) => r.event_id)
-  )
+  const registeredEventIds = new Set(userRegs.map(r => r.eventId))
 
-  // Count registrations per event
-  const regCountsResult = await supabase
-    .from("event_registrations")
-    .select("event_id")
+  const regCounts = allRegs.reduce((acc, r) => {
+    acc[r.eventId] = (acc[r.eventId] ?? 0) + 1
+    return acc
+  }, {} as Record<string, number>)
 
-  const regCounts = (regCountsResult.data ?? []).reduce(
-    (acc, r) => {
-      if (r.event_id) {
-        acc[r.event_id] = (acc[r.event_id] || 0) + 1
-      }
-      return acc
-    },
-    {} as Record<string, number>
-  )
-
-  const upcomingEvents = events.filter(
-    (e) => new Date(e.start_date) >= new Date()
-  )
+  const now = new Date()
+  const upcomingEvents = allEvents.filter(e => new Date(e.startDate) >= now)
 
   return (
     <>
@@ -61,7 +41,7 @@ export default async function KalenderPage() {
         </p>
       </div>
 
-      <CalendarGrid events={events} />
+      <CalendarGrid events={allEvents} />
 
       <SectionHeader title="Kommende Events" />
 
@@ -73,9 +53,9 @@ export default async function KalenderPage() {
               id={event.id}
               title={event.title}
               location={event.location}
-              startDate={event.start_date}
-              endDate={event.end_date}
-              maxSeats={event.max_seats}
+              startDate={event.startDate}
+              endDate={event.endDate}
+              maxSeats={event.maxSeats}
               registrationCount={regCounts[event.id] ?? 0}
               isRegistered={registeredEventIds.has(event.id)}
               userId={user.id}

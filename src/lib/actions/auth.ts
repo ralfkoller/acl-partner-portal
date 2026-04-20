@@ -2,75 +2,42 @@
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { users } from "@/lib/db/schema"
+import { eq } from "drizzle-orm"
+import { comparePassword } from "@/lib/auth/password"
+import { setSessionCookie, clearSessionCookie, getUser } from "@/lib/auth/session"
 
 export async function login(formData: FormData) {
-  const supabase = await createClient()
+  const email = (formData.get("email") as string)?.trim().toLowerCase()
+  const password = formData.get("password") as string
+  if (!email || !password) return { error: "E-Mail und Passwort sind erforderlich." }
 
-  const data = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
+  try {
+    const user = await db.select().from(users).where(eq(users.email, email)).limit(1).then(r => r[0] ?? null)
+    if (!user) return { error: "E-Mail oder Passwort ist falsch." }
+
+    const valid = await comparePassword(password, user.passwordHash)
+    if (!valid) return { error: "E-Mail oder Passwort ist falsch." }
+
+    await setSessionCookie({ sub: user.id, email: user.email, role: user.role })
+    revalidatePath("/", "layout")
+    return { redirect: "/dashboard" }
+  } catch (err) {
+    console.error("[login] Error:", err)
+    return { error: "Anmeldung fehlgeschlagen. Bitte erneut versuchen." }
   }
-
-  const { error } = await supabase.auth.signInWithPassword(data)
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  revalidatePath("/", "layout")
-  return { redirect: "/dashboard" }
 }
 
 export async function logout() {
-  const supabase = await createClient()
-  await supabase.auth.signOut()
+  await clearSessionCookie()
   revalidatePath("/", "layout")
   redirect("/login")
 }
 
-export async function resetPassword(formData: FormData) {
-  const supabase = await createClient()
-
-  const email = formData.get("email") as string
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/auth/callback?next=/profil`,
-  })
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  return { success: "Passwort-Reset-E-Mail wurde gesendet." }
-}
-
-export async function getUser() {
-  const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  
-  if (authError) {
-    console.error("[getUser] Auth error:", authError.message)
-    return null
-  }
-  
-  if (!user) return null
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single()
-
-  if (profileError) {
-    console.error("[getUser] Profile query error:", profileError.message, profileError.code, profileError.details, profileError.hint)
-  }
-
-  return profile
-}
+export { getUser }
 
 export async function getSession() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUser()
   return user
 }

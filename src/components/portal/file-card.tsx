@@ -1,7 +1,6 @@
 "use client"
 
 import { FileText, FileSpreadsheet, FileArchive, FileImage, File, Download } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 
 interface FileCardProps {
   id: string
@@ -43,15 +42,10 @@ export function FileCard({
 }: FileCardProps) {
   const { icon: FileIcon, color } = getFileIcon(mimeType)
 
-  async function handleDownload() {
-    const supabase = createClient()
-    const { data, error } = await supabase.storage
-      .from("portal-files")
-      .createSignedUrl(storagePath, 60)
-
-    if (data?.signedUrl) {
-      window.open(data.signedUrl, "_blank")
-    }
+  function handleDownload() {
+    // storagePath ist relativ zu public/uploads/
+    const url = `/uploads/${storagePath}`
+    window.open(url, "_blank")
   }
 
   return (

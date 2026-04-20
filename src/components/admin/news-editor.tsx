@@ -18,7 +18,7 @@ interface NewsEditorProps {
     title: string
     content: any
     excerpt: string | null
-    is_published: boolean
+    isPublished: boolean
   }
 }
 
@@ -27,7 +27,7 @@ export function NewsEditor({ news }: NewsEditorProps) {
   const [title, setTitle] = useState(news?.title ?? "")
   const [content, setContent] = useState<any>(news?.content ?? null)
   const [excerpt, setExcerpt] = useState(news?.excerpt ?? "")
-  const [isPublished, setIsPublished] = useState(news?.is_published ?? false)
+  const [isPublished, setIsPublished] = useState(news?.isPublished ?? false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
@@ -39,7 +39,7 @@ export function NewsEditor({ news }: NewsEditorProps) {
     }
 
     startTransition(async () => {
-      const data = { title, content, excerpt, is_published: isPublished }
+      const data = { title, content, excerpt, isPublished }
       const result = isEditing
         ? await updateNews(news!.id, data)
         : await createNews(data)

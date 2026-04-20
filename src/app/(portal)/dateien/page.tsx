@@ -1,5 +1,6 @@
-import { createClient } from "@/lib/supabase/server"
-import { SectionHeader } from "@/components/portal/section-header"
+import { db } from "@/lib/db"
+import { files, fileCategories } from "@/lib/db/schema"
+import { eq, asc, desc, like } from "drizzle-orm"
 import { FileCard } from "@/components/portal/file-card"
 import { DateienFilter } from "@/components/portal/dateien-filter"
 import { FolderOpen } from "lucide-react"
@@ -14,31 +15,36 @@ export default async function DateienPage({
   searchParams: Promise<{ category?: string; search?: string }>
 }) {
   const params = await searchParams
-  const supabase = await createClient()
 
-  const [categoriesResult, filesQuery] = await Promise.all([
-    supabase.from("file_categories").select("*").order("sort_order"),
+  const [allCategories, allFiles] = await Promise.all([
+    db.select().from(fileCategories).orderBy(asc(fileCategories.sortOrder)),
     (async () => {
-      let query = supabase
-        .from("files")
-        .select("*, file_categories(name)")
-        .eq("is_published", true)
-        .order("uploaded_at", { ascending: false })
+      let query = db
+        .select({
+          id: files.id,
+          name: files.name,
+          description: files.description,
+          mimeType: files.mimeType,
+          fileSize: files.fileSize,
+          storagePath: files.storagePath,
+          categoryId: files.categoryId,
+        })
+        .from(files)
+        .where(eq(files.isPublished, true))
+        .$dynamic()
 
       if (params.category) {
-        query = query.eq("category_id", params.category)
+        query = query.where(eq(files.categoryId, params.category))
       }
-
       if (params.search) {
-        query = query.ilike("name", `%${params.search}%`)
+        query = query.where(like(files.name, `%${params.search}%`))
       }
 
-      return query
+      return query.orderBy(desc(files.createdAt))
     })(),
   ])
 
-  const categories = categoriesResult.data ?? []
-  const files = filesQuery.data ?? []
+  const categoriesMap = Object.fromEntries(allCategories.map(c => [c.id, c.name]))
 
   return (
     <>
@@ -51,20 +57,20 @@ export default async function DateienPage({
         </div>
       </div>
 
-      <DateienFilter categories={categories} />
+      <DateienFilter categories={allCategories} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {files.length > 0 ? (
-          files.map((file) => (
+        {allFiles.length > 0 ? (
+          allFiles.map((file) => (
             <FileCard
               key={file.id}
               id={file.id}
               name={file.name}
               description={file.description}
-              mimeType={file.mime_type}
-              fileSize={file.file_size}
-              categoryName={(file.file_categories as any)?.name}
-              storagePath={file.storage_path}
+              mimeType={file.mimeType}
+              fileSize={file.fileSize}
+              categoryName={file.categoryId ? categoriesMap[file.categoryId] : undefined}
+              storagePath={file.storagePath}
             />
           ))
         ) : (

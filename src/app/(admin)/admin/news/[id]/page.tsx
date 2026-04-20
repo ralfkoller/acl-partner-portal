@@ -1,4 +1,6 @@
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { news } from "@/lib/db/schema"
+import { eq } from "drizzle-orm"
 import { redirect } from "next/navigation"
 import { NewsEditor } from "@/components/admin/news-editor"
 
@@ -17,14 +19,8 @@ export default async function AdminNewsEditPage({
     return <NewsEditor />
   }
 
-  const supabase = await createClient()
-  const { data: news } = await supabase
-    .from("news")
-    .select("*")
-    .eq("id", id)
-    .single()
+  const item = await db.select().from(news).where(eq(news.id, id)).limit(1).then(r => r[0] ?? null)
+  if (!item) redirect("/admin/news")
 
-  if (!news) redirect("/admin/news")
-
-  return <NewsEditor news={news} />
+  return <NewsEditor news={item} />
 }

@@ -1,16 +1,10 @@
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { users, files, events, news } from "@/lib/db/schema"
+import { sql } from "drizzle-orm"
 import { getUser } from "@/lib/actions/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import {
-  Users,
-  FolderOpen,
-  Calendar,
-  Newspaper,
-  Plus,
-  Upload,
-  UserPlus,
-} from "lucide-react"
+import { Users, FolderOpen, Calendar, Newspaper, Plus, Upload, UserPlus } from "lucide-react"
 import { SectionHeader } from "@/components/portal/section-header"
 
 export const metadata = {
@@ -21,40 +15,29 @@ export default async function AdminDashboardPage() {
   const user = await getUser()
   if (!user || user.role !== "admin") redirect("/dashboard")
 
-  const supabase = await createClient()
-
-  const [profilesResult, filesResult, eventsResult, newsResult] = await Promise.all([
-    supabase.from("profiles").select("id", { count: "exact", head: true }),
-    supabase.from("files").select("id", { count: "exact", head: true }),
-    supabase.from("events").select("id", { count: "exact", head: true }),
-    supabase.from("news").select("id", { count: "exact", head: true }),
+  const [
+    [{ count: usersCount }],
+    [{ count: filesCount }],
+    [{ count: eventsCount }],
+    [{ count: newsCount }],
+    recentNews,
+  ] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(users),
+    db.select({ count: sql<number>`count(*)` }).from(files),
+    db.select({ count: sql<number>`count(*)` }).from(events),
+    db.select({ count: sql<number>`count(*)` }).from(news),
+    db
+      .select({ id: news.id, title: news.title, createdAt: news.createdAt, isPublished: news.isPublished })
+      .from(news)
+      .orderBy(sql`created_at DESC`)
+      .limit(5),
   ])
 
   const stats = [
-    {
-      title: "Partner",
-      value: profilesResult.count ?? 0,
-      icon: Users,
-      accentColor: "#F0A844",
-    },
-    {
-      title: "Dateien",
-      value: filesResult.count ?? 0,
-      icon: FolderOpen,
-      accentColor: "#10b981",
-    },
-    {
-      title: "Events",
-      value: eventsResult.count ?? 0,
-      icon: Calendar,
-      accentColor: "#3b82f6",
-    },
-    {
-      title: "News",
-      value: newsResult.count ?? 0,
-      icon: Newspaper,
-      accentColor: "#8b5cf6",
-    },
+    { title: "Partner", value: usersCount, icon: Users, accentColor: "#F0A844" },
+    { title: "Dateien", value: filesCount, icon: FolderOpen, accentColor: "#10b981" },
+    { title: "Events", value: eventsCount, icon: Calendar, accentColor: "#3b82f6" },
+    { title: "News", value: newsCount, icon: Newspaper, accentColor: "#8b5cf6" },
   ]
 
   const quickActions = [
@@ -63,13 +46,6 @@ export default async function AdminDashboardPage() {
     { label: "Event erstellen", href: "/admin/kalender?new=true", icon: Plus },
     { label: "Partner einladen", href: "/admin/benutzer?new=true", icon: UserPlus },
   ]
-
-  // Recent news for activity feed
-  const recentNews = await supabase
-    .from("news")
-    .select("id, title, created_at, is_published")
-    .order("created_at", { ascending: false })
-    .limit(5)
 
   return (
     <>
@@ -122,26 +98,26 @@ export default async function AdminDashboardPage() {
       {/* Recent Activity */}
       <SectionHeader title="Letzte Aktivitäten" />
       <div className="bg-white rounded-xl border border-gray-100/80 divide-y divide-gray-100">
-        {(recentNews.data ?? []).map((item) => (
+        {recentNews.map((item) => (
           <div key={item.id} className="px-6 py-4 flex items-center justify-between">
             <div>
               <div className="text-sm font-medium text-acl-dark">{item.title}</div>
               <div className="text-xs text-acl-gray mt-0.5">
-                {new Date(item.created_at).toLocaleDateString("de-AT")}
+                {new Date(item.createdAt).toLocaleDateString("de-AT")}
               </div>
             </div>
             <span
               className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                item.is_published
+                item.isPublished
                   ? "bg-emerald-500/10 text-emerald-600"
                   : "bg-acl-orange/10 text-acl-orange"
               }`}
             >
-              {item.is_published ? "Veröffentlicht" : "Entwurf"}
+              {item.isPublished ? "Veröffentlicht" : "Entwurf"}
             </span>
           </div>
         ))}
-        {(recentNews.data ?? []).length === 0 && (
+        {recentNews.length === 0 && (
           <div className="px-6 py-8 text-center text-sm text-acl-gray">
             Noch keine Aktivitäten.
           </div>

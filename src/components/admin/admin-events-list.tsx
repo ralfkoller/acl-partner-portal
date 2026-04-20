@@ -19,16 +19,16 @@ interface Event {
   title: string
   description: any
   location: string | null
-  event_url: string | null
-  start_date: string
-  end_date: string | null
-  max_seats: number | null
-  is_published: boolean
-  created_at: string
+  eventUrl: string | null
+  startDate: string
+  endDate: string | null
+  maxSeats: number | null
+  isPublished: boolean
+  createdAt: string
 }
 
 interface Attendee {
-  full_name: string
+  fullName: string
   company: string | null
 }
 
@@ -73,11 +73,11 @@ export function AdminEventsList({ events, registrations }: AdminEventsListProps)
     setTitle(event.title)
     setDescription(event.description)
     setLocation(event.location ?? "")
-    setEventUrl(event.event_url ?? "")
-    setStartDate(event.start_date ? event.start_date.slice(0, 16) : "")
-    setEndDate(event.end_date ? event.end_date.slice(0, 16) : "")
-    setMaxSeats(event.max_seats?.toString() ?? "")
-    setIsPublished(event.is_published)
+    setEventUrl(event.eventUrl ?? "")
+    setStartDate(event.startDate ? event.startDate.slice(0, 16) : "")
+    setEndDate(event.endDate ? event.endDate.slice(0, 16) : "")
+    setMaxSeats(event.maxSeats?.toString() ?? "")
+    setIsPublished(event.isPublished)
     setShowForm(true)
   }
 
@@ -88,11 +88,11 @@ export function AdminEventsList({ events, registrations }: AdminEventsListProps)
         title,
         description,
         location,
-        event_url: eventUrl,
-        start_date: new Date(startDate).toISOString(),
-        end_date: endDate ? new Date(endDate).toISOString() : undefined,
-        max_seats: maxSeats ? parseInt(maxSeats) : undefined,
-        is_published: isPublished,
+        eventUrl,
+        startDate: new Date(startDate).toISOString(),
+        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        maxSeats: maxSeats ? parseInt(maxSeats) : undefined,
+        isPublished,
       }
 
       const result = editEvent
@@ -146,17 +146,17 @@ export function AdminEventsList({ events, registrations }: AdminEventsListProps)
                   <div className="flex items-center gap-3 mb-1">
                     <h3 className="text-sm font-semibold text-acl-dark">{event.title}</h3>
                     <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium ${
-                      event.is_published
+                      event.isPublished
                         ? "bg-emerald-500/10 text-emerald-600"
                         : "bg-acl-orange/10 text-acl-orange"
                     }`}>
-                      {event.is_published ? "Veröffentlicht" : "Entwurf"}
+                      {event.isPublished ? "Veröffentlicht" : "Entwurf"}
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-acl-gray">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {format(new Date(event.start_date), "dd.MM.yyyy HH:mm", { locale: de })}
+                      {format(new Date(event.startDate), "dd.MM.yyyy HH:mm", { locale: de })}
                     </span>
                     {event.location && (
                       <span className="flex items-center gap-1">
@@ -165,7 +165,7 @@ export function AdminEventsList({ events, registrations }: AdminEventsListProps)
                     )}
                     <span className="flex items-center gap-1">
                       <Users className="w-3 h-3" />
-                      {attendees.length}{event.max_seats ? ` / ${event.max_seats}` : ""} Teilnehmer
+                      {attendees.length}{event.maxSeats ? ` / ${event.maxSeats}` : ""} Teilnehmer
                     </span>
                   </div>
                 </div>
@@ -204,10 +204,10 @@ export function AdminEventsList({ events, registrations }: AdminEventsListProps)
                         <div key={i} className="flex items-center gap-2 text-sm">
                           <div className="w-6 h-6 rounded-full bg-acl-orange-light flex items-center justify-center flex-shrink-0">
                             <span className="text-[10px] font-bold text-acl-dark">
-                              {a.full_name[0]}
+                              {a.fullName[0]}
                             </span>
                           </div>
-                          <span className="text-acl-dark">{a.full_name}</span>
+                          <span className="text-acl-dark">{a.fullName}</span>
                           {a.company && <span className="text-acl-gray text-xs">({a.company})</span>}
                         </div>
                       ))}

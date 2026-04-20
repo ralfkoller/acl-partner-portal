@@ -1,73 +1,87 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { events } from "@/lib/db/schema"
+import { eq } from "drizzle-orm"
+import { getUser } from "@/lib/auth/session"
+import { nanoid } from "nanoid"
 
 export async function createEvent(data: {
   title: string
-  description?: any
+  description?: unknown
   location?: string
-  event_url?: string
-  start_date: string
-  end_date?: string
-  max_seats?: number
-  is_published: boolean
+  eventUrl?: string
+  startDate: string
+  endDate?: string
+  maxSeats?: number
+  isPublished: boolean
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUser()
 
-  const { error } = await supabase.from("events").insert({
-    title: data.title,
-    description: data.description || null,
-    location: data.location || null,
-    event_url: data.event_url || null,
-    start_date: data.start_date,
-    end_date: data.end_date || null,
-    max_seats: data.max_seats || null,
-    created_by: user?.id,
-    is_published: data.is_published,
-  })
-
-  if (error) return { error: error.message }
-  revalidatePath("/admin/kalender")
-  revalidatePath("/kalender")
-  return { success: true }
+  try {
+    await db.insert(events).values({
+      id: nanoid(),
+      title: data.title,
+      description: data.description ? JSON.stringify(data.description) : null,
+      location: data.location || null,
+      eventUrl: data.eventUrl || null,
+      startDate: data.startDate,
+      endDate: data.endDate || null,
+      maxSeats: data.maxSeats || null,
+      createdBy: user?.id ?? null,
+      isPublished: data.isPublished,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    revalidatePath("/admin/kalender")
+    revalidatePath("/kalender")
+    return { success: true }
+  } catch (err) {
+    console.error("[createEvent]", err)
+    return { error: "Event konnte nicht erstellt werden." }
+  }
 }
 
 export async function updateEvent(id: string, data: {
   title: string
-  description?: any
+  description?: unknown
   location?: string
-  event_url?: string
-  start_date: string
-  end_date?: string
-  max_seats?: number
-  is_published: boolean
+  eventUrl?: string
+  startDate: string
+  endDate?: string
+  maxSeats?: number
+  isPublished: boolean
 }) {
-  const supabase = await createClient()
-  const { error } = await supabase.from("events").update({
-    title: data.title,
-    description: data.description || null,
-    location: data.location || null,
-    event_url: data.event_url || null,
-    start_date: data.start_date,
-    end_date: data.end_date || null,
-    max_seats: data.max_seats || null,
-    is_published: data.is_published,
-  }).eq("id", id)
-
-  if (error) return { error: error.message }
-  revalidatePath("/admin/kalender")
-  revalidatePath("/kalender")
-  return { success: true }
+  try {
+    await db.update(events).set({
+      title: data.title,
+      description: data.description ? JSON.stringify(data.description) : null,
+      location: data.location || null,
+      eventUrl: data.eventUrl || null,
+      startDate: data.startDate,
+      endDate: data.endDate || null,
+      maxSeats: data.maxSeats || null,
+      isPublished: data.isPublished,
+      updatedAt: new Date().toISOString(),
+    }).where(eq(events.id, id))
+    revalidatePath("/admin/kalender")
+    revalidatePath("/kalender")
+    return { success: true }
+  } catch (err) {
+    console.error("[updateEvent]", err)
+    return { error: "Event konnte nicht aktualisiert werden." }
+  }
 }
 
 export async function deleteEvent(id: string) {
-  const supabase = await createClient()
-  const { error } = await supabase.from("events").delete().eq("id", id)
-
-  if (error) return { error: error.message }
-  revalidatePath("/admin/kalender")
-  revalidatePath("/kalender")
-  return { success: true }
+  try {
+    await db.delete(events).where(eq(events.id, id))
+    revalidatePath("/admin/kalender")
+    revalidatePath("/kalender")
+    return { success: true }
+  } catch (err) {
+    console.error("[deleteEvent]", err)
+    return { error: "Event konnte nicht gelöscht werden." }
+  }
 }

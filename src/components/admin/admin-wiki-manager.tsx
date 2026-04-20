@@ -18,16 +18,16 @@ interface Category {
   id: string
   name: string
   description: string | null
-  sort_order: number
+  sortOrder: number
 }
 
 interface FaqItem {
   id: string
-  category_id: string | null
+  categoryId: string | null
   question: string
   answer: any
-  sort_order: number
-  is_published: boolean
+  sortOrder: number
+  isPublished: boolean
 }
 
 export function AdminWikiManager({ categories, items }: { categories: Category[]; items: FaqItem[] }) {
@@ -59,10 +59,10 @@ export function AdminWikiManager({ categories, items }: { categories: Category[]
 
   function openEditItem(item: FaqItem) {
     setEditItem(item)
-    setItemCatId(item.category_id ?? "")
+    setItemCatId(item.categoryId ?? "")
     setItemQuestion(item.question)
     setItemAnswer(item.answer)
-    setItemPublished(item.is_published)
+    setItemPublished(item.isPublished)
     setShowItemForm(true)
   }
 
@@ -84,7 +84,7 @@ export function AdminWikiManager({ categories, items }: { categories: Category[]
   function handleSubmitItem(e: React.FormEvent) {
     e.preventDefault()
     startTransition(async () => {
-      const data = { category_id: itemCatId, question: itemQuestion, answer: itemAnswer || {}, is_published: itemPublished }
+      const data = { categoryId: itemCatId, question: itemQuestion, answer: itemAnswer || {}, isPublished: itemPublished }
       const result = editItem ? await updateFaqItem(editItem.id, data) : await createFaqItem(data)
       if (result.error) toast.error(result.error)
       else {
@@ -123,7 +123,7 @@ export function AdminWikiManager({ categories, items }: { categories: Category[]
 
       {categories.length > 0 ? (
         categories.map((cat) => {
-          const catItems = items.filter((i) => i.category_id === cat.id)
+          const catItems = items.filter((i) => i.categoryId === cat.id)
           return (
             <div key={cat.id} className="mb-8">
               <div className="flex items-center justify-between mb-4">
@@ -140,7 +140,7 @@ export function AdminWikiManager({ categories, items }: { categories: Category[]
                   <div key={item.id} className="bg-white rounded-xl px-6 py-3 border border-gray-100/80 flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <span className="text-sm text-acl-dark">{item.question}</span>
-                      {!item.is_published && (
+                      {!item.isPublished && (
                         <span className="ml-2 px-2 py-0.5 rounded-md text-[10px] font-medium bg-acl-orange/10 text-acl-orange">Entwurf</span>
                       )}
                     </div>

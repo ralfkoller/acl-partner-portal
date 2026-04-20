@@ -1,5 +1,6 @@
-import { createClient } from "@/lib/supabase/server"
-import { SectionHeader } from "@/components/portal/section-header"
+import { db } from "@/lib/db"
+import { news, users } from "@/lib/db/schema"
+import { eq, desc } from "drizzle-orm"
 import { AdminNewsList } from "@/components/admin/admin-news-list"
 import Link from "next/link"
 import { Plus } from "lucide-react"
@@ -9,12 +10,19 @@ export const metadata = {
 }
 
 export default async function AdminNewsPage() {
-  const supabase = await createClient()
-
-  const { data: news } = await supabase
-    .from("news")
-    .select("*, profiles(full_name)")
-    .order("created_at", { ascending: false })
+  const allNews = await db
+    .select({
+      id: news.id,
+      title: news.title,
+      excerpt: news.excerpt,
+      isPublished: news.isPublished,
+      publishedAt: news.publishedAt,
+      createdAt: news.createdAt,
+      authorName: users.fullName,
+    })
+    .from(news)
+    .leftJoin(users, eq(news.authorId, users.id))
+    .orderBy(desc(news.createdAt))
 
   return (
     <>
@@ -33,7 +41,7 @@ export default async function AdminNewsPage() {
         </Link>
       </div>
 
-      <AdminNewsList news={news ?? []} />
+      <AdminNewsList news={allNews} />
     </>
   )
 }

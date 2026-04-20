@@ -1,4 +1,6 @@
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { faqCategories, faqItems } from "@/lib/db/schema"
+import { asc } from "drizzle-orm"
 import { AdminWikiManager } from "@/components/admin/admin-wiki-manager"
 
 export const metadata = {
@@ -6,11 +8,9 @@ export const metadata = {
 }
 
 export default async function AdminWikiPage() {
-  const supabase = await createClient()
-
-  const [categoriesResult, itemsResult] = await Promise.all([
-    supabase.from("faq_categories").select("*").order("sort_order"),
-    supabase.from("faq_items").select("*").order("sort_order"),
+  const [allCategories, allItems] = await Promise.all([
+    db.select().from(faqCategories).orderBy(asc(faqCategories.sortOrder)),
+    db.select().from(faqItems).orderBy(asc(faqItems.sortOrder)),
   ])
 
   return (
@@ -22,10 +22,7 @@ export default async function AdminWikiPage() {
         </p>
       </div>
 
-      <AdminWikiManager
-        categories={categoriesResult.data ?? []}
-        items={itemsResult.data ?? []}
-      />
+      <AdminWikiManager categories={allCategories} items={allItems} />
     </>
   )
 }

@@ -1,84 +1,92 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { news } from "@/lib/db/schema"
+import { eq } from "drizzle-orm"
+import { getUser } from "@/lib/auth/session"
+import { nanoid } from "nanoid"
 
 export async function createNews(data: {
   title: string
-  content: any
+  content: unknown
   excerpt?: string
-  is_published: boolean
+  isPublished: boolean
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getUser()
 
-  const { error } = await supabase.from("news").insert({
-    title: data.title,
-    content: data.content,
-    excerpt: data.excerpt || null,
-    author_id: user?.id,
-    is_published: data.is_published,
-    published_at: data.is_published ? new Date().toISOString() : null,
-  })
-
-  if (error) return { error: error.message }
-  revalidatePath("/admin/news")
-  revalidatePath("/dashboard")
-  return { success: true }
+  try {
+    await db.insert(news).values({
+      id: nanoid(),
+      title: data.title,
+      content: JSON.stringify(data.content),
+      excerpt: data.excerpt || null,
+      authorId: user?.id ?? null,
+      isPublished: data.isPublished,
+      publishedAt: data.isPublished ? new Date().toISOString() : null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    revalidatePath("/admin/news")
+    revalidatePath("/dashboard")
+    return { success: true }
+  } catch (err) {
+    console.error("[createNews]", err)
+    return { error: "News konnte nicht erstellt werden." }
+  }
 }
 
 export async function updateNews(
   id: string,
   data: {
     title: string
-    content: any
+    content: unknown
     excerpt?: string
-    is_published: boolean
+    isPublished: boolean
   }
 ) {
-  const supabase = await createClient()
-
-  const { error } = await supabase
-    .from("news")
-    .update({
+  try {
+    await db.update(news).set({
       title: data.title,
-      content: data.content,
+      content: JSON.stringify(data.content),
       excerpt: data.excerpt || null,
-      is_published: data.is_published,
-      published_at: data.is_published ? new Date().toISOString() : null,
-    })
-    .eq("id", id)
-
-  if (error) return { error: error.message }
-  revalidatePath("/admin/news")
-  revalidatePath("/dashboard")
-  return { success: true }
+      isPublished: data.isPublished,
+      publishedAt: data.isPublished ? new Date().toISOString() : null,
+      updatedAt: new Date().toISOString(),
+    }).where(eq(news.id, id))
+    revalidatePath("/admin/news")
+    revalidatePath("/dashboard")
+    return { success: true }
+  } catch (err) {
+    console.error("[updateNews]", err)
+    return { error: "News konnte nicht aktualisiert werden." }
+  }
 }
 
 export async function deleteNews(id: string) {
-  const supabase = await createClient()
-  const { error } = await supabase.from("news").delete().eq("id", id)
-
-  if (error) return { error: error.message }
-  revalidatePath("/admin/news")
-  revalidatePath("/dashboard")
-  return { success: true }
+  try {
+    await db.delete(news).where(eq(news.id, id))
+    revalidatePath("/admin/news")
+    revalidatePath("/dashboard")
+    return { success: true }
+  } catch (err) {
+    console.error("[deleteNews]", err)
+    return { error: "News konnte nicht gelöscht werden." }
+  }
 }
 
 export async function toggleNewsPublished(id: string, isPublished: boolean) {
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from("news")
-    .update({
-      is_published: isPublished,
-      published_at: isPublished ? new Date().toISOString() : null,
-    })
-    .eq("id", id)
-
-  if (error) return { error: error.message }
-  revalidatePath("/admin/news")
-  revalidatePath("/dashboard")
-  return { success: true }
+  try {
+    await db.update(news).set({
+      isPublished,
+      publishedAt: isPublished ? new Date().toISOString() : null,
+      updatedAt: new Date().toISOString(),
+    }).where(eq(news.id, id))
+    revalidatePath("/admin/news")
+    revalidatePath("/dashboard")
+    return { success: true }
+  } catch (err) {
+    console.error("[toggleNewsPublished]", err)
+    return { error: "Status konnte nicht geändert werden." }
+  }
 }

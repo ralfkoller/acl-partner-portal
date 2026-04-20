@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Trash2, Upload, FolderOpen } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { createFileRecord, deleteFile, createFileCategory, deleteFileCategory } from "@/lib/actions/files"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -12,32 +11,14 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-
-interface FileItem {
-  id: string
-  name: string
-  description: string | null
-  storage_path: string
-  file_size: number | null
-  mime_type: string | null
-  is_published: boolean
-  uploaded_at: string
-  file_categories: { name: string } | null
-}
-
-interface Category {
-  id: string
-  name: string
-  description: string | null
-  sort_order: number
-}
+import type { File as FileRecord, FileCategory } from "@/lib/db/schema"
 
 export function AdminFilesList({
   files,
   categories,
 }: {
-  files: FileItem[]
-  categories: Category[]
+  files: FileRecord[]
+  categories: FileCategory[]
 }) {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; path: string } | null>(null)
   const [showUpload, setShowUpload] = useState(false)
@@ -46,7 +27,7 @@ export function AdminFilesList({
   const router = useRouter()
 
   // Upload state
-  const [file, setFile] = useState<File | null>(null)
+  const [file, setFile] = useState<globalThis.File | null>(null)
   const [fileName, setFileName] = useState("")
   const [fileDesc, setFileDesc] = useState("")
   const [fileCat, setFileCat] = useState("")
@@ -72,24 +53,26 @@ export function AdminFilesList({
     e.preventDefault()
     if (!file) return
     startTransition(async () => {
-      const supabase = createClient()
-      const path = `uploads/${Date.now()}-${file.name}`
-      const { error: uploadError } = await supabase.storage
-        .from("portal-files")
-        .upload(path, file)
+      // Upload via API-Route
+      const uploadData = new FormData()
+      uploadData.append("file", file)
 
-      if (uploadError) {
-        toast.error("Upload fehlgeschlagen: " + uploadError.message)
+      const res = await fetch("/api/upload", { method: "POST", body: uploadData })
+      if (!res.ok) {
+        const { error } = await res.json()
+        toast.error("Upload fehlgeschlagen: " + (error ?? res.statusText))
         return
       }
+
+      const { path, size, mimeType } = await res.json()
 
       const result = await createFileRecord({
         name: fileName || file.name,
         description: fileDesc,
         category_id: fileCat || undefined,
         storage_path: path,
-        file_size: file.size,
-        mime_type: file.type,
+        file_size: size,
+        mime_type: mimeType,
         is_published: true,
       })
 
@@ -158,26 +141,27 @@ export function AdminFilesList({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {files.map((f) => (
-              <tr key={f.id} className="hover:bg-acl-light/30 transition-colors">
-                <td className="px-6 py-4 text-sm font-medium text-acl-dark">{f.name}</td>
-                <td className="px-6 py-4 text-sm text-acl-gray">
-                  {(f.file_categories as any)?.name ?? "—"}
-                </td>
-                <td className="px-6 py-4 text-sm text-acl-gray">{formatSize(f.file_size)}</td>
-                <td className="px-6 py-4 text-sm text-acl-gray">
-                  {new Date(f.uploaded_at).toLocaleDateString("de-AT")}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={() => setDeleteTarget({ id: f.id, path: f.storage_path })}
-                    className="p-1.5 rounded-lg text-acl-gray hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {files.map((f) => {
+              const cat = categories.find(c => c.id === f.categoryId)
+              return (
+                <tr key={f.id} className="hover:bg-acl-light/30 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-acl-dark">{f.name}</td>
+                  <td className="px-6 py-4 text-sm text-acl-gray">{cat?.name ?? "—"}</td>
+                  <td className="px-6 py-4 text-sm text-acl-gray">{formatSize(f.fileSize)}</td>
+                  <td className="px-6 py-4 text-sm text-acl-gray">
+                    {new Date(f.createdAt).toLocaleDateString("de-AT")}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => setDeleteTarget({ id: f.id, path: f.storagePath })}
+                      className="p-1.5 rounded-lg text-acl-gray hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
             {files.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-6 py-8 text-center text-sm text-acl-gray">
@@ -297,7 +281,7 @@ export function AdminFilesList({
         open={deleteTarget !== null}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title="Datei löschen"
-        description="Möchten Sie diese Datei wirklich löschen? Die Datei wird auch aus dem Storage entfernt."
+        description="Möchten Sie diese Datei wirklich löschen? Die Datei wird auch vom Server entfernt."
         confirmLabel="Löschen"
         onConfirm={handleDelete}
         isDestructive

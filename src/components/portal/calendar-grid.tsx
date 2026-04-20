@@ -20,7 +20,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 interface CalendarEvent {
   id: string
   title: string
-  start_date: string
+  startDate: string
 }
 
 interface CalendarGridProps {
@@ -39,7 +39,7 @@ export function CalendarGrid({ events }: CalendarGridProps) {
   const weekDays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 
   function getEventsForDay(day: Date) {
-    return events.filter((event) => isSameDay(new Date(event.start_date), day))
+    return events.filter((event) => isSameDay(new Date(event.startDate), day))
   }
 
   return (

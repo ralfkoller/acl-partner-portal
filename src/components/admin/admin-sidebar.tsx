@@ -17,10 +17,10 @@ import {
   X,
 } from "lucide-react"
 import { logout } from "@/lib/actions/auth"
-import type { Tables } from "@/lib/types/database"
+import type { User } from "@/lib/db/schema"
 
 interface AdminSidebarProps {
-  user: Tables<"profiles">
+  user: User
 }
 
 const adminNavItems = [
@@ -36,7 +36,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const initials = user.full_name
+  const initials = user.fullName
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -139,7 +139,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
               <span className="text-acl-dark text-xs font-bold">{initials}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-white truncate">{user.full_name}</div>
+              <div className="text-sm font-medium text-white truncate">{user.fullName}</div>
               <div className="text-xs text-acl-gray truncate">{user.company || "Admin"}</div>
             </div>
             <form action={logout}>

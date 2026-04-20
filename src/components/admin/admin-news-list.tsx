@@ -11,10 +11,10 @@ import { toast } from "sonner"
 interface NewsItem {
   id: string
   title: string
-  is_published: boolean
-  created_at: string
-  published_at: string | null
-  profiles: { full_name: string } | null
+  isPublished: boolean
+  createdAt: string
+  publishedAt: string | null
+  authorName: string | null
 }
 
 export function AdminNewsList({ news }: { news: NewsItem[] }) {
@@ -79,22 +79,22 @@ export function AdminNewsList({ news }: { news: NewsItem[] }) {
                 </td>
                 <td className="px-6 py-4">
                   <button
-                    onClick={() => handleTogglePublish(item.id, item.is_published)}
+                    onClick={() => handleTogglePublish(item.id, item.isPublished)}
                     disabled={isPending}
                     className={`px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${
-                      item.is_published
+                      item.isPublished
                         ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
                         : "bg-acl-orange/10 text-acl-orange hover:bg-acl-orange/20"
                     }`}
                   >
-                    {item.is_published ? "Veröffentlicht" : "Entwurf"}
+                    {item.isPublished ? "Veröffentlicht" : "Entwurf"}
                   </button>
                 </td>
                 <td className="px-6 py-4 text-sm text-acl-gray">
-                  {(item.profiles as any)?.full_name ?? "—"}
+                  {item.authorName ?? "—"}
                 </td>
                 <td className="px-6 py-4 text-sm text-acl-gray">
-                  {new Date(item.created_at).toLocaleDateString("de-AT")}
+                  {new Date(item.createdAt).toLocaleDateString("de-AT")}
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">

@@ -1,4 +1,6 @@
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { files, fileCategories } from "@/lib/db/schema"
+import { desc, asc } from "drizzle-orm"
 import { AdminFilesList } from "@/components/admin/admin-files-list"
 
 export const metadata = {
@@ -6,14 +8,9 @@ export const metadata = {
 }
 
 export default async function AdminDateienPage() {
-  const supabase = await createClient()
-
-  const [filesResult, categoriesResult] = await Promise.all([
-    supabase
-      .from("files")
-      .select("*, file_categories(name)")
-      .order("uploaded_at", { ascending: false }),
-    supabase.from("file_categories").select("*").order("sort_order"),
+  const [allFiles, allCategories] = await Promise.all([
+    db.select().from(files).orderBy(desc(files.createdAt)),
+    db.select().from(fileCategories).orderBy(asc(fileCategories.sortOrder)),
   ])
 
   return (
@@ -25,10 +22,7 @@ export default async function AdminDateienPage() {
         </p>
       </div>
 
-      <AdminFilesList
-        files={filesResult.data ?? []}
-        categories={categoriesResult.data ?? []}
-      />
+      <AdminFilesList files={allFiles} categories={allCategories} />
     </>
   )
 }

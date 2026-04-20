@@ -10,7 +10,6 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/actions/users", () => ({
   updateUserRole: vi.fn().mockResolvedValue({ success: true }),
   createUser: vi.fn().mockResolvedValue({ success: true }),
-  inviteUser: vi.fn().mockResolvedValue({ success: true }),
 }))
 
 vi.mock("sonner", () => ({
@@ -22,26 +21,26 @@ vi.mock("sonner", () => ({
 const mockUsers = [
   {
     id: "1",
-    full_name: "Anna Admin",
+    fullName: "Anna Admin",
     company: "ACL GmbH",
     role: "admin" as const,
-    created_at: "2026-01-15T10:00:00Z",
+    createdAt: "2026-01-15T10:00:00Z",
   },
   {
     id: "2",
-    full_name: "Peter Partner",
+    fullName: "Peter Partner",
     company: "Partner GmbH",
     role: "partner" as const,
-    created_at: "2026-02-20T10:00:00Z",
+    createdAt: "2026-02-20T10:00:00Z",
   },
   {
     id: "3",
-    full_name: "Maria Muster",
+    fullName: "Maria Muster",
     company: null,
     role: "partner" as const,
-    created_at: "2026-03-01T10:00:00Z",
+    createdAt: "2026-03-01T10:00:00Z",
   },
-]
+] as any[]
 
 describe("AdminUsersList", () => {
   beforeEach(() => {

@@ -1,4 +1,6 @@
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { files, events, news, eventRegistrations } from "@/lib/db/schema"
+import { eq, gte, sql, and } from "drizzle-orm"
 import { getUser } from "@/lib/actions/auth"
 import { redirect } from "next/navigation"
 import { FolderOpen, Calendar, Newspaper, UserCheck } from "lucide-react"
@@ -15,86 +17,55 @@ export default async function DashboardPage() {
   const user = await getUser()
   if (!user) redirect("/login")
 
-  const supabase = await createClient()
+  const now = new Date().toISOString()
 
-  // Fetch stats in parallel
-  const [filesResult, eventsResult, newsCountResult, registrationsResult, newsResult] =
-    await Promise.all([
-      supabase.from("files").select("id", { count: "exact", head: true }).eq("is_published", true),
-      supabase
-        .from("events")
-        .select("id", { count: "exact", head: true })
-        .eq("is_published", true)
-        .gte("start_date", new Date().toISOString()),
-      supabase.from("news").select("id", { count: "exact", head: true }).eq("is_published", true),
-      supabase
-        .from("event_registrations")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id),
-      supabase
-        .from("news")
-        .select("*")
-        .eq("is_published", true)
-        .order("published_at", { ascending: false })
-        .limit(5),
-    ])
+  const [
+    [{ count: filesCount }],
+    [{ count: eventsCount }],
+    [{ count: newsCount }],
+    [{ count: registrationsCount }],
+    latestNews,
+  ] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(files).where(eq(files.isPublished, true)),
+    db.select({ count: sql<number>`count(*)` }).from(events).where(and(eq(events.isPublished, true), gte(events.startDate, now))),
+    db.select({ count: sql<number>`count(*)` }).from(news).where(eq(news.isPublished, true)),
+    db.select({ count: sql<number>`count(*)` }).from(eventRegistrations).where(eq(eventRegistrations.userId, user.id)),
+    db
+      .select({ id: news.id, title: news.title, excerpt: news.excerpt, publishedAt: news.publishedAt })
+      .from(news)
+      .where(eq(news.isPublished, true))
+      .orderBy(sql`published_at DESC`)
+      .limit(5),
+  ])
 
   const stats = [
-    {
-      title: "Neue Dateien",
-      value: filesResult.count ?? 0,
-      icon: FolderOpen,
-      accentColor: "#F0A844",
-      href: "/dateien",
-    },
-    {
-      title: "Events diesen Monat",
-      value: eventsResult.count ?? 0,
-      icon: Calendar,
-      accentColor: "#3b82f6",
-      href: "/kalender",
-    },
-    {
-      title: "Aktuelle News",
-      value: newsCountResult.count ?? 0,
-      icon: Newspaper,
-      accentColor: "#10b981",
-      href: "#news",
-    },
-    {
-      title: "Meine Anmeldungen",
-      value: registrationsResult.count ?? 0,
-      icon: UserCheck,
-      accentColor: "#8b5cf6",
-      href: "/kalender",
-    },
+    { title: "Neue Dateien", value: filesCount, icon: FolderOpen, accentColor: "#F0A844", href: "/dateien" },
+    { title: "Events diesen Monat", value: eventsCount, icon: Calendar, accentColor: "#3b82f6", href: "/kalender" },
+    { title: "Aktuelle News", value: newsCount, icon: Newspaper, accentColor: "#10b981", href: "#news" },
+    { title: "Meine Anmeldungen", value: registrationsCount, icon: UserCheck, accentColor: "#8b5cf6", href: "/kalender" },
   ]
-
-  const news = newsResult.data ?? []
 
   return (
     <>
-      <HeroBanner userName={user.full_name} />
+      <HeroBanner userName={user.fullName} />
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
         {stats.map((stat) => (
           <StatCard key={stat.title} {...stat} />
         ))}
       </div>
 
-      {/* News Feed */}
       <div id="news">
         <SectionHeader title="Neuigkeiten" />
         <div className="space-y-4">
-          {news.length > 0 ? (
-            news.map((item) => (
+          {latestNews.length > 0 ? (
+            latestNews.map((item) => (
               <NewsCard
                 key={item.id}
                 id={item.id}
                 title={item.title}
                 excerpt={item.excerpt}
-                publishedAt={item.published_at}
+                publishedAt={item.publishedAt}
               />
             ))
           ) : (

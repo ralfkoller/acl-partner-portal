@@ -1,84 +1,88 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { db } from "@/lib/db"
+import { users } from "@/lib/db/schema"
+import { eq, desc } from "drizzle-orm"
+import { hashPassword } from "@/lib/auth/password"
+import { nanoid } from "nanoid"
 
 export async function updateUserRole(userId: string, role: "admin" | "partner") {
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from("profiles")
-    .update({ role })
-    .eq("id", userId)
-
-  if (error) return { error: error.message }
-  revalidatePath("/admin/benutzer")
-  return { success: true }
+  try {
+    await db.update(users).set({ role, updatedAt: new Date().toISOString() }).where(eq(users.id, userId))
+    revalidatePath("/admin/benutzer")
+    return { success: true }
+  } catch (err) {
+    console.error("[updateUserRole]", err)
+    return { error: "Rolle konnte nicht aktualisiert werden." }
+  }
 }
 
 export async function getUsers() {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: false })
-
-  if (error) return { error: error.message }
-  return { data }
+  try {
+    const data = await db.select().from(users).orderBy(desc(users.createdAt))
+    return { data }
+  } catch (err) {
+    console.error("[getUsers]", err)
+    return { error: "Benutzer konnten nicht geladen werden." }
+  }
 }
 
 export async function createUser(formData: FormData) {
-  const email = formData.get("email") as string
+  const email = (formData.get("email") as string)?.trim().toLowerCase()
   const password = formData.get("password") as string
-  const fullName = formData.get("full_name") as string
-  const company = formData.get("company") as string
+  const fullName = (formData.get("full_name") as string)?.trim()
+  const company = (formData.get("company") as string)?.trim() || null
   const role = (formData.get("role") as "admin" | "partner") ?? "partner"
 
-  const adminClient = createAdminClient()
+  if (!email || !password || !fullName) return { error: "E-Mail, Passwort und Name sind erforderlich." }
 
-  // Auth-User anlegen — user_metadata wird vom Trigger `on_auth_user_created`
-  // automatisch in public.profiles übernommen (full_name, company, role).
-  // Kein manueller profiles-INSERT nötig.
-  const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true, // sofort aktiv, keine Bestätigungs-Email
-    user_metadata: {
-      full_name: fullName,
-      company: company || null,
+  try {
+    const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1)
+    if (existing.length > 0) return { error: "Ein Benutzer mit dieser E-Mail existiert bereits." }
+
+    const passwordHash = await hashPassword(password)
+    await db.insert(users).values({
+      id: nanoid(),
+      email,
+      passwordHash,
+      fullName,
+      company,
       role,
-    },
-  })
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
 
-  if (authError) return { error: authError.message }
-  if (!authData.user) return { error: "Benutzer konnte nicht erstellt werden." }
-
-  revalidatePath("/admin/benutzer")
-  return { success: true }
+    revalidatePath("/admin/benutzer")
+    return { success: true }
+  } catch (err) {
+    console.error("[createUser]", err)
+    return { error: "Benutzer konnte nicht erstellt werden." }
+  }
 }
 
-export async function inviteUser(formData: FormData) {
-  const email = formData.get("email") as string
-  const fullName = formData.get("full_name") as string
-  const company = formData.get("company") as string
-  const role = (formData.get("role") as "admin" | "partner") ?? "partner"
+export async function resetUserPassword(userId: string, newPassword: string) {
+  if (!newPassword || newPassword.length < 8) return { error: "Passwort muss mindestens 8 Zeichen lang sein." }
+  try {
+    const passwordHash = await hashPassword(newPassword)
+    await db.update(users)
+      .set({ passwordHash, mustChangePassword: true, updatedAt: new Date().toISOString() })
+      .where(eq(users.id, userId))
+    revalidatePath("/admin/benutzer")
+    return { success: true }
+  } catch (err) {
+    console.error("[resetUserPassword]", err)
+    return { error: "Passwort konnte nicht zurückgesetzt werden." }
+  }
+}
 
-  const adminClient = createAdminClient()
-
-  // Einladungs-Email via Supabase senden.
-  // `data` landet in raw_user_meta_data und wird vom Trigger `on_auth_user_created`
-  // beim ersten Akzeptieren der Einladung automatisch in public.profiles übernommen.
-  const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
-    email,
-    {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/login`,
-      data: { full_name: fullName, company: company || null, role },
-    }
-  )
-
-  if (inviteError) return { error: inviteError.message }
-  if (!inviteData.user) return { error: "Einladung konnte nicht gesendet werden." }
-
-  revalidatePath("/admin/benutzer")
-  return { success: true }
+export async function deleteUser(userId: string) {
+  try {
+    await db.delete(users).where(eq(users.id, userId))
+    revalidatePath("/admin/benutzer")
+    return { success: true }
+  } catch (err) {
+    console.error("[deleteUser]", err)
+    return { error: "Benutzer konnte nicht gelöscht werden." }
+  }
 }

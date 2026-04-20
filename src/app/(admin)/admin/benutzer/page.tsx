@@ -1,4 +1,6 @@
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { users } from "@/lib/db/schema"
+import { desc } from "drizzle-orm"
 import { AdminUsersList } from "@/components/admin/admin-users-list"
 
 export const metadata = {
@@ -6,12 +8,7 @@ export const metadata = {
 }
 
 export default async function AdminBenutzerPage() {
-  const supabase = await createClient()
-
-  const { data: users } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: false })
+  const allUsers = await db.select().from(users).orderBy(desc(users.createdAt))
 
   return (
     <>
@@ -22,7 +19,7 @@ export default async function AdminBenutzerPage() {
         </p>
       </div>
 
-      <AdminUsersList users={users ?? []} />
+      <AdminUsersList users={allUsers} />
     </>
   )
 }

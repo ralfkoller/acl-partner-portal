@@ -1,4 +1,6 @@
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { faqCategories, faqItems } from "@/lib/db/schema"
+import { eq, asc } from "drizzle-orm"
 import { SectionHeader } from "@/components/portal/section-header"
 import { FaqAccordion } from "@/components/portal/faq-accordion"
 import { WikiSearch } from "@/components/portal/wiki-search"
@@ -8,12 +10,20 @@ export const metadata = {
   title: "Wiki / FAQ",
 }
 
-function extractTextFromTiptapJson(json: any): string {
+function extractTextFromTiptapJson(json: unknown): string {
   if (!json) return ""
-  if (typeof json === "string") return json
-  if (json.type === "text") return json.text || ""
-  if (json.content) {
-    return json.content.map((node: any) => extractTextFromTiptapJson(node)).join(" ")
+  if (typeof json === "string") {
+    try {
+      const parsed = JSON.parse(json)
+      return extractTextFromTiptapJson(parsed)
+    } catch {
+      return json
+    }
+  }
+  const node = json as Record<string, unknown>
+  if (node.type === "text") return (node.text as string) || ""
+  if (node.content) {
+    return (node.content as unknown[]).map(extractTextFromTiptapJson).join(" ")
   }
   return ""
 }
@@ -24,21 +34,13 @@ export default async function WikiPage({
   searchParams: Promise<{ search?: string }>
 }) {
   const params = await searchParams
-  const supabase = await createClient()
 
-  const [categoriesResult, itemsResult] = await Promise.all([
-    supabase.from("faq_categories").select("*").order("sort_order"),
-    supabase
-      .from("faq_items")
-      .select("*")
-      .eq("is_published", true)
-      .order("sort_order"),
+  const [allCategories, allItems] = await Promise.all([
+    db.select().from(faqCategories).orderBy(asc(faqCategories.sortOrder)),
+    db.select().from(faqItems).where(eq(faqItems.isPublished, true)).orderBy(asc(faqItems.sortOrder)),
   ])
 
-  const categories = categoriesResult.data ?? []
-  let items = itemsResult.data ?? []
-
-  // Filter by search
+  let items = allItems
   if (params.search) {
     const searchLower = params.search.toLowerCase()
     items = items.filter(
@@ -48,11 +50,10 @@ export default async function WikiPage({
     )
   }
 
-  // Group items by category
-  const groupedItems = categories
+  const groupedItems = allCategories
     .map((cat) => ({
       ...cat,
-      items: items.filter((item) => item.category_id === cat.id),
+      items: items.filter((item) => item.categoryId === cat.id),
     }))
     .filter((cat) => cat.items.length > 0)
 

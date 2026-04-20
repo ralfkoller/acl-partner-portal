@@ -4,9 +4,9 @@ import { format } from "date-fns"
 import { de } from "date-fns/locale"
 import { MapPin, Clock, Users } from "lucide-react"
 import { useTransition } from "react"
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { registerForEvent, unregisterFromEvent } from "@/lib/actions/registrations"
 
 interface EventCardProps {
   id: string
@@ -39,13 +39,9 @@ export function EventCard({
 
   async function handleRegister() {
     startTransition(async () => {
-      const supabase = createClient()
-      const { error } = await supabase.from("event_registrations").insert({
-        event_id: id,
-        user_id: userId,
-      })
-      if (error) {
-        toast.error("Anmeldung fehlgeschlagen")
+      const result = await registerForEvent(id)
+      if (result.error) {
+        toast.error(result.error)
       } else {
         toast.success("Erfolgreich angemeldet")
         router.refresh()
@@ -55,14 +51,9 @@ export function EventCard({
 
   async function handleUnregister() {
     startTransition(async () => {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from("event_registrations")
-        .delete()
-        .eq("event_id", id)
-        .eq("user_id", userId)
-      if (error) {
-        toast.error("Abmeldung fehlgeschlagen")
+      const result = await unregisterFromEvent(id)
+      if (result.error) {
+        toast.error(result.error)
       } else {
         toast.success("Erfolgreich abgemeldet")
         router.refresh()

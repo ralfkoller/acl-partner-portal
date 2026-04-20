@@ -1,7 +1,15 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { files, fileCategories } from "@/lib/db/schema"
+import { eq } from "drizzle-orm"
+import { getUser } from "@/lib/auth/session"
+import { nanoid } from "nanoid"
+import fs from "fs/promises"
+import path from "path"
+
+const UPLOADS_DIR = path.join(process.cwd(), "public", "uploads")
 
 export async function createFileRecord(data: {
   name: string
@@ -12,37 +20,47 @@ export async function createFileRecord(data: {
   mime_type: string
   is_published: boolean
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getUser()
 
-  const { error } = await supabase.from("files").insert({
-    ...data,
-    uploaded_by: user?.id,
-    description: data.description || null,
-    category_id: data.category_id || null,
-  })
-
-  if (error) return { error: error.message }
-  revalidatePath("/admin/dateien")
-  revalidatePath("/dateien")
-  return { success: true }
+  try {
+    await db.insert(files).values({
+      id: nanoid(),
+      name: data.name,
+      description: data.description || null,
+      categoryId: data.category_id || null,
+      storagePath: data.storage_path,
+      fileSize: data.file_size,
+      mimeType: data.mime_type,
+      uploadedBy: user?.id ?? null,
+      isPublished: data.is_published,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    revalidatePath("/admin/dateien")
+    revalidatePath("/dateien")
+    return { success: true }
+  } catch (err) {
+    console.error("[createFileRecord]", err)
+    return { error: "Datei-Eintrag konnte nicht erstellt werden." }
+  }
 }
 
 export async function deleteFile(id: string, storagePath: string) {
-  const supabase = await createClient()
+  try {
+    // Physische Datei löschen
+    const absPath = path.join(UPLOADS_DIR, storagePath)
+    await fs.unlink(absPath).catch(() => {
+      // Ignorieren wenn Datei nicht existiert
+    })
 
-  // Delete from storage first
-  await supabase.storage.from("portal-files").remove([storagePath])
-
-  // Then delete record
-  const { error } = await supabase.from("files").delete().eq("id", id)
-
-  if (error) return { error: error.message }
-  revalidatePath("/admin/dateien")
-  revalidatePath("/dateien")
-  return { success: true }
+    await db.delete(files).where(eq(files.id, id))
+    revalidatePath("/admin/dateien")
+    revalidatePath("/dateien")
+    return { success: true }
+  } catch (err) {
+    console.error("[deleteFile]", err)
+    return { error: "Datei konnte nicht gelöscht werden." }
+  }
 }
 
 export async function createFileCategory(data: {
@@ -50,25 +68,31 @@ export async function createFileCategory(data: {
   description?: string
   sort_order?: number
 }) {
-  const supabase = await createClient()
-  const { error } = await supabase.from("file_categories").insert({
-    name: data.name,
-    description: data.description || null,
-    sort_order: data.sort_order ?? 0,
-  })
-
-  if (error) return { error: error.message }
-  revalidatePath("/admin/dateien")
-  revalidatePath("/dateien")
-  return { success: true }
+  try {
+    await db.insert(fileCategories).values({
+      id: nanoid(),
+      name: data.name,
+      description: data.description || null,
+      sortOrder: data.sort_order ?? 0,
+      createdAt: new Date().toISOString(),
+    })
+    revalidatePath("/admin/dateien")
+    revalidatePath("/dateien")
+    return { success: true }
+  } catch (err) {
+    console.error("[createFileCategory]", err)
+    return { error: "Kategorie konnte nicht erstellt werden." }
+  }
 }
 
 export async function deleteFileCategory(id: string) {
-  const supabase = await createClient()
-  const { error } = await supabase.from("file_categories").delete().eq("id", id)
-
-  if (error) return { error: error.message }
-  revalidatePath("/admin/dateien")
-  revalidatePath("/dateien")
-  return { success: true }
+  try {
+    await db.delete(fileCategories).where(eq(fileCategories.id, id))
+    revalidatePath("/admin/dateien")
+    revalidatePath("/dateien")
+    return { success: true }
+  } catch (err) {
+    console.error("[deleteFileCategory]", err)
+    return { error: "Kategorie konnte nicht gelöscht werden." }
+  }
 }
