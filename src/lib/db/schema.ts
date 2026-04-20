@@ -6,7 +6,7 @@ import {
 } from "drizzle-orm/sqlite-core"
 
 // ---------------------------------------------------------------------------
-// users — ersetzt Supabase auth.users + profiles
+// users
 // ---------------------------------------------------------------------------
 export const users = sqliteTable("users", {
   id:           text("id").primaryKey(),               // nanoid

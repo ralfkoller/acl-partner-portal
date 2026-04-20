@@ -8,6 +8,21 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unreleased]
 
+### Changed — Phase 10: Supabase-Rückstände bereinigen
+- **`.env.local.example`** komplett neu geschrieben — nur noch `JWT_SECRET` + `DATABASE_URL`
+- **`src/lib/types/database.ts`** gelöscht — 340-Zeilen Supabase-generierte Typ-Datei entfernt
+- **`src/lib/auth/session.ts`** + **`src/lib/db/schema.ts`** — Supabase-Kommentare entfernt
+- **`docs/STYLEGUIDE.md`** komplett von Supabase-Referenzen bereinigt:
+  - Stack-Beschreibung, Backend-Tabelle, Import-Referenzen aktualisiert
+  - "Server Component Data Fetching" + "Server Action Architektur" auf Drizzle umgeschrieben
+  - "Datenbank & Auth" Abschnitt ersetzt den alten "Supabase Client-Auswahl" Abschnitt
+  - Error Logging Beispiel: `Supabase error` → `DB error`
+  - Dos: `parallele Supabase-Queries` → `Drizzle-Queries`
+  - Don'ts: `supabase.auth.getSession()` + Admin-Client entfernt, durch generische Auth-Regel ersetzt
+  - Action File Struktur: Supabase-Import → Drizzle-Imports
+  - Template A (Admin-Listenseite): komplett auf Drizzle ORM umgeschrieben
+  - Template C (Server Action): komplett auf Drizzle ORM umgeschrieben
+
 ### Changed — Phase 9b: TypeScript-Bereinigung (Supabase → Drizzle)
 - **Vollständige camelCase-Migration:** Alle Komponenten, Actions und Pages verwenden nun durchgängig Drizzle-Typen (camelCase) statt Supabase snake_case-Interfaces.
   - `admin-sidebar.tsx`, `portal/sidebar.tsx` — `Tables<"profiles">` → `User` aus `@/lib/db/schema`; `full_name` → `fullName`

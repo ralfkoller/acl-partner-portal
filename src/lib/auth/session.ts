@@ -31,7 +31,7 @@ export async function getSessionPayload(): Promise<JWTPayload | null> {
   return verifyJWT(token)
 }
 
-/** Gibt den vollständigen User aus der Datenbank zurück (ersetzt getUser() aus Supabase). */
+/** Gibt den vollständigen User aus der Datenbank zurück. */
 export async function getUser(): Promise<User | null> {
   const session = await getSessionPayload()
   if (!session) return null

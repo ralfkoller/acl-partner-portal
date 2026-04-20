@@ -2,7 +2,7 @@
 
 **Version:** 1.0 — März 2026  
 **Projekt:** ACL Partner Portal  
-**Stack:** Next.js 16 App Router · Tailwind v4 · shadcn/Base UI · Supabase · TypeScript
+**Stack:** Next.js 16 App Router · Tailwind v4 · shadcn/Base UI · SQLite (Drizzle ORM) · TypeScript
 
 Dieser Guide dokumentiert alle UI- und Code-Patterns des ACL Partner Portals. Er dient als Referenz beim Aufbau neuer Module innerhalb desselben Design-Systems.
 
@@ -40,7 +40,7 @@ Das ACL Partner Portal folgt drei Kernprinzipien:
 | Framework | Next.js 16 App Router | Turbopack Dev, Server Components als Default |
 | Styling | Tailwind v4 (CSS-first) | Kein `tailwind.config.js` — Tokens in `globals.css` |
 | UI-Primitives | shadcn/ui + Base UI | Selektiv genutzt — eigene Patterns bevorzugt |
-| Backend | Supabase (PostgreSQL + Auth) | Drei Client-Typen: server, browser, admin |
+| Backend | SQLite + Drizzle ORM | `data/portal.db`, Schema in `src/lib/db/schema.ts` |
 | Sprache | TypeScript strict | Zod v4 für Schema-Validierung |
 | Linting | ESLint (eslint-config-next) | |
 
@@ -191,7 +191,7 @@ Wird in `(portal)/layout.tsx` und `(admin)/layout.tsx` verwendet:
 ```tsx
 // src/app/(portal)/layout.tsx
 import { Sidebar } from "@/components/portal/sidebar"
-import { getUser } from "@/lib/supabase/server"
+import { getUser } from "@/lib/auth/session"
 import { redirect } from "next/navigation"
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -872,31 +872,37 @@ export default function Error({
 
 ### Server Component Data Fetching
 
-Alle `page.tsx`-Dateien sind `async` Server Components. Daten werden direkt via Supabase geladen:
+Alle `page.tsx`-Dateien sind `async` Server Components. Daten werden direkt via Drizzle ORM geladen:
 
 ```tsx
 // src/app/(portal)/dashboard/page.tsx
-import { createClient, getUser } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { files, events, news } from "@/lib/db/schema"
+import { eq, sql, and, gte } from "drizzle-orm"
+import { getUser } from "@/lib/auth/session"
 import { redirect } from "next/navigation"
 
 export default async function DashboardPage() {
   const user = await getUser()
   if (!user) redirect("/login")
 
-  const supabase = await createClient()
-
   // Paralleles Laden für bessere Performance
-  const [filesResult, eventsResult, newsResult] = await Promise.all([
-    supabase.from("files").select("id", { count: "exact", head: true }),
-    supabase.from("events").select("id", { count: "exact", head: true }),
-    supabase.from("news")
-      .select("*")
-      .eq("is_published", true)
-      .order("published_at", { ascending: false })
+  const [
+    [{ count: filesCount }],
+    [{ count: eventsCount }],
+    latestNews,
+  ] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(files).where(eq(files.isPublished, true)),
+    db.select({ count: sql<number>`count(*)` }).from(events).where(and(eq(events.isPublished, true), gte(events.startDate, new Date().toISOString()))),
+    db
+      .select({ id: news.id, title: news.title, excerpt: news.excerpt, publishedAt: news.publishedAt })
+      .from(news)
+      .where(eq(news.isPublished, true))
+      .orderBy(sql`published_at DESC`)
       .limit(5),
   ])
 
-  return <DashboardClient user={user} news={newsResult.data ?? []} />
+  return <DashboardClient user={user} news={latestNews} />
 }
 ```
 
@@ -913,35 +919,41 @@ Alle Server Actions liegen in `src/lib/actions/` — ein File pro Domain.
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
-import { newsSchema } from "@/lib/schemas/news"
+import { db } from "@/lib/db"
+import { news } from "@/lib/db/schema"
+import { eq } from "drizzle-orm"
+import { getUser } from "@/lib/auth/session"
+import { nanoid } from "nanoid"
 import { z } from "zod/v4"  // ← WICHTIG: zod/v4, nicht zod
 
-export async function createNews(formData: FormData) {
-  // 1. Daten aus FormData extrahieren
-  const raw = {
-    title: formData.get("title") as string,
-    content: JSON.parse(formData.get("content") as string),
-    excerpt: formData.get("excerpt") as string || undefined,
-    is_published: formData.get("is_published") === "true",
+export async function createNews(data: {
+  title: string
+  content: unknown
+  excerpt?: string
+  isPublished: boolean
+}) {
+  const user = await getUser()
+
+  try {
+    await db.insert(news).values({
+      id: nanoid(),
+      title: data.title,
+      content: JSON.stringify(data.content),
+      excerpt: data.excerpt || null,
+      authorId: user?.id ?? null,
+      isPublished: data.isPublished,
+      publishedAt: data.isPublished ? new Date().toISOString() : null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+
+    revalidatePath("/admin/news")
+    revalidatePath("/dashboard")
+    return { success: true }
+  } catch (err) {
+    console.error("[createNews]", err)
+    return { error: "News konnte nicht erstellt werden." }
   }
-
-  // 2. Zod-Validierung (Best Practice — immer ausführen)
-  const parsed = newsSchema.safeParse(raw)
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0].message }
-  }
-
-  // 3. Supabase-Mutation
-  const supabase = await createClient()
-  const { error } = await supabase.from("news").insert(parsed.data)
-  if (error) return { error: error.message }
-
-  // 4. Cache invalidieren
-  revalidatePath("/admin/news")
-  revalidatePath("/dashboard")
-
-  return { success: true }
 }
 ```
 
@@ -1039,26 +1051,26 @@ import { z } from "zod/v4"
 
 ---
 
-### Supabase Client-Auswahl
+### Datenbank & Auth
 
-| Client | Import | Wann |
+| Layer | Import | Verwendung |
 |---|---|---|
-| Server | `import { createClient } from "@/lib/supabase/server"` | Server Components, Server Actions, proxy.ts |
-| Browser | `import { createClient } from "@/lib/supabase/client"` | Client Components mit direkten DB-Mutations (kein Server Action) |
-| Admin | `import { createAdminClient } from "@/lib/supabase/admin"` | Nur Server Actions die Service Role brauchen (User-Anlage, Invite) |
+| DB-Zugriff | `import { db } from "@/lib/db"` | Alle Server Components und Server Actions |
+| Schema/Typen | `import { users, news, ... } from "@/lib/db/schema"` | Tabellen-Referenzen + TypeScript-Typen (`User`, `News`, etc.) |
+| Session | `import { getSessionPayload, getUser } from "@/lib/auth/session"` | JWT-Session lesen, User aus DB laden |
+| Passwort | `import { hashPassword, verifyPassword } from "@/lib/auth/password"` | bcryptjs Hashing |
+| JWT | `import { signToken, verifyToken } from "@/lib/auth/jwt"` | jose-basierte JWT-Tokens |
 
 ```ts
-// Server (async — wegen cookies())
-const supabase = await createClient()
+// Drizzle Query-Beispiel
+import { db } from "@/lib/db"
+import { news } from "@/lib/db/schema"
+import { eq } from "drizzle-orm"
 
-// Browser (sync)
-const supabase = createClient()
-
-// Admin (sync — kein Session-Handling)
-const adminClient = createAdminClient()
+const allNews = await db.select().from(news).where(eq(news.isPublished, true))
 ```
 
-**Achtung:** Den Admin-Client niemals im Browser verwenden. `SUPABASE_SERVICE_ROLE_KEY` darf nie im Client-Bundle landen.
+**Achtung:** Alle Drizzle-Schema-Felder verwenden camelCase (`isPublished`, `startDate`, `fullName`). Die zugrunde liegenden SQLite-Spalten nutzen snake_case — das Mapping übernimmt Drizzle automatisch.
 
 ---
 
@@ -1066,7 +1078,7 @@ const adminClient = createAdminClient()
 
 ```ts
 // Strukturiertes Format mit Funktionsname als Prefix
-console.error("[createNews] Supabase error:", error.message)
+console.error("[createNews] DB error:", error.message)
 console.error("[getUser] Profile query error:", profileError.message, profileError.code)
 ```
 
@@ -1130,8 +1142,9 @@ type ActionResult = { error: string } | { success: true }
 "use server"                              // ← immer erste Zeile
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
-import { domainSchema } from "@/lib/schemas/[domain]"
+import { db } from "@/lib/db"
+import { [entity] } from "@/lib/db/schema"
+import { eq } from "drizzle-orm"
 
 // Named exports, alphabetisch nach CRUD-Reihenfolge:
 export async function create[Entity](formData: FormData) { ... }
@@ -1169,7 +1182,7 @@ export type EntityFormData = z.infer<typeof entitySchema>
 - `useTransition` für alle async Form-Submissions
 - Server Actions immer mit `{ error }` | `{ success }` return contract
 - Zod `safeParse()` in Server Actions ausführen — nicht nur für TypeScript-Typen
-- `Promise.all()` für parallele Supabase-Queries in Server Components
+- `Promise.all()` für parallele Drizzle-Queries in Server Components
 - `revalidatePath()` in Server Actions, `router.refresh()` in Client-Mutations
 - `toast.error()` für Mutation-Fehler, Inline-Error für Login/kritische Formulare
 - Named exports für alle Komponenten
@@ -1187,8 +1200,7 @@ export type EntityFormData = z.infer<typeof entitySchema>
 - `redirect()` innerhalb von `useTransition` — wirft NEXT_REDIRECT der von React abgefangen wird; stattdessen `{ redirect: "/pfad" }` zurückgeben und client-seitig `router.push()` aufrufen
 - Default-Exports für Komponenten
 - PascalCase-Dateinamen
-- `await supabase.auth.getSession()` — immer `getUser()` verwenden (sicherer)
-- Admin-Client im Browser verwenden
+- Auth-Logik im Browser ausführen — Session-Validierung gehört in den Server (proxy.ts / Server Actions)
 - `import { z } from "zod"` — der korrekte Pfad für Zod v4 ist `"zod/v4"`
 
 ---
@@ -1199,19 +1211,18 @@ export type EntityFormData = z.infer<typeof entitySchema>
 
 ```tsx
 // src/app/(admin)/admin/[entity]/page.tsx
-import { createClient, getUser } from "@/lib/supabase/server"
+import { getUser } from "@/lib/auth/session"
 import { redirect } from "next/navigation"
+import { db } from "@/lib/db"
+import { entities } from "@/lib/db/schema"
+import { desc } from "drizzle-orm"
 import { EntityList } from "@/components/admin/entity-list"
 
 export default async function EntityPage() {
   const user = await getUser()
   if (!user) redirect("/login")
 
-  const supabase = await createClient()
-  const { data: items, error } = await supabase
-    .from("entities")
-    .select("*")
-    .order("created_at", { ascending: false })
+  const items = await db.select().from(entities).orderBy(desc(entities.createdAt))
 
   return (
     <div>
@@ -1219,7 +1230,7 @@ export default async function EntityPage() {
         <h1 className="text-2xl font-bold text-acl-dark">Entitäten</h1>
         <p className="text-acl-gray mt-1">Alle Einträge verwalten</p>
       </div>
-      <EntityList items={items ?? []} />
+      <EntityList items={items} />
     </div>
   )
 }
@@ -1391,7 +1402,9 @@ export function EntityList({ items }: { items: Entity[] }) {
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
+import { db } from "@/lib/db"
+import { entities } from "@/lib/db/schema"
+import { eq } from "drizzle-orm"
 import { z } from "zod/v4"
 
 const entitySchema = z.object({
@@ -1404,9 +1417,11 @@ export async function createEntity(formData: FormData) {
     return { error: parsed.error.issues[0].message }
   }
 
-  const supabase = await createClient()
-  const { error } = await supabase.from("entities").insert(parsed.data)
-  if (error) return { error: error.message }
+  try {
+    await db.insert(entities).values(parsed.data)
+  } catch (err) {
+    return { error: "Fehler beim Erstellen" }
+  }
 
   revalidatePath("/admin/entities")
   return { success: true }
@@ -1415,9 +1430,11 @@ export async function createEntity(formData: FormData) {
 export async function deleteEntity(id: string) {
   if (!id) return { error: "Ungültige ID" }
 
-  const supabase = await createClient()
-  const { error } = await supabase.from("entities").delete().eq("id", id)
-  if (error) return { error: error.message }
+  try {
+    await db.delete(entities).where(eq(entities.id, id))
+  } catch (err) {
+    return { error: "Fehler beim Löschen" }
+  }
 
   revalidatePath("/admin/entities")
   return { success: true }
