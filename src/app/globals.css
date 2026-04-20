@@ -221,14 +221,28 @@
   66% { transform: translate(-20px, 15px) scale(0.95); }
 }
 
-/* Glass card */
+/* Glass card
+   backdrop-filter is placed on a ::after pseudo-element instead of the
+   container itself. This prevents Safari/WebKit from creating a new
+   stacking context on the card element, which would block pointer-events
+   on all interactive children (known WebKit bug). */
 .v2-glass {
+  position: relative;
   background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.v2-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: -1;
+  pointer-events: none;
 }
 
 .v2-glass:hover {
@@ -239,12 +253,22 @@
 
 /* Glass card with glow border */
 .v2-glass-glow {
+  position: relative;
   background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(240, 168, 68, 0.18);
   border-radius: 1rem;
   box-shadow: 0 0 30px rgba(240, 168, 68, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.v2-glass-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: -1;
+  pointer-events: none;
 }
 
 /* Gradient text */
